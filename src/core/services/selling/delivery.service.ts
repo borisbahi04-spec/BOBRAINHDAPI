@@ -539,9 +539,6 @@ export class DeliveryService extends AbstractService<Delivery> {
       ]);
     }
 
-    console.log('rerererer89898', deliveryProductData);
-    console.log('rerererer4000', childProduct);
-
     // 🔹 Vérification du stock avant mise à jour
     await this.checkStockBeforeDelivery(childProduct, {
       ...deliveryProductData,
@@ -972,10 +969,10 @@ export class DeliveryService extends AbstractService<Delivery> {
     const totalDelivered: Record<string, number> = {};
     for (const delivery of deliverys) {
       for (const rtp of delivery.deliveryToProducts) {
-        if (!totalDelivered[rtp.productId]) {
-          totalDelivered[rtp.productId] = 0;
+        if (!totalDelivered[rtp.sku]) {
+          totalDelivered[rtp.sku] = 0;
         }
-        totalDelivered[rtp.productId] += rtp.quantity;
+        totalDelivered[rtp.sku] += rtp.quantity;
       }
     }
 
@@ -1052,10 +1049,10 @@ export class DeliveryService extends AbstractService<Delivery> {
 
     // ⚠️ Ajout des quantités de la réception en cours de validation
     for (const rtp of delivery.deliveryToProducts) {
-      const alreadyDelivered = totalDelivered[rtp.productId] || 0;
+      const alreadyDelivered = totalDelivered[rtp.sku] || 0;
+
       const sellinged =
-        selling.sellingToProducts.find((o) => o.productId === rtp.productId)
-          ?.quantity || 0;
+        selling.sellingToProducts.find((o) => o.sku === rtp.sku)?.quantity || 0;
 
       const totalDeliveredIncludingCurrent = alreadyDelivered + rtp.quantity;
       if (totalDeliveredIncludingCurrent > sellinged) {

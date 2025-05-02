@@ -64,6 +64,7 @@ export class ProductService extends AbstractService<Product> {
     page: number = 1,
     perPage: number = 25,
   ) {
+    console.log('sdsdsd589898',options)
     const baseUrl = await this.configService.get('APP_BASE_URL'); // Get base URL from config
     // Paginate using provided options, page, and perPage
     const products = await this.paginatedService.paginate(
@@ -72,7 +73,6 @@ export class ProductService extends AbstractService<Product> {
       perPage,
       options,
     );
-    console.log('gffgflkkl',options)
 
     // Process each item in the paginated data asynchronously
     await Promise.all(

@@ -347,7 +347,7 @@ export class SellingService extends AbstractService<Selling> {
   ): boolean {
     for (const otp of sellingToProducts) {
       const sellingedQty = otp.quantity;
-      const deliveredQty = delivered[otp.productId] || 0;
+      const deliveredQty = delivered[otp.sku] || 0;
 
       if (deliveredQty < sellingedQty) {
         return false; // Produit pas encore totalement livré
