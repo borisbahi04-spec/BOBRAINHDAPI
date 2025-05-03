@@ -67,7 +67,6 @@ export class DeliveryController {
       options?.where,
       await this.service.getFilterByAuthUserBranch(),
     );
-
     return this.service.readPaginatedListRecord(options);
   }
 

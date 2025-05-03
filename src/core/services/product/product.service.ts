@@ -64,7 +64,7 @@ export class ProductService extends AbstractService<Product> {
     page: number = 1,
     perPage: number = 25,
   ) {
-    console.log('sdsdsd589898',options)
+    console.log('sdsdsd589898', options);
     const baseUrl = await this.configService.get('APP_BASE_URL'); // Get base URL from config
     // Paginate using provided options, page, and perPage
     const products = await this.paginatedService.paginate(
@@ -510,7 +510,6 @@ export class ProductService extends AbstractService<Product> {
 
     for (const item of products) {
       if (!item.isBundle && item.trackStock) {
-        console.log('IOIOIIOIO', item.hasVariant);
         // Cas avec variantes
         if (item.hasVariant && item.variantToProducts?.length > 0) {
           for (const vp of item.variantToProducts) {
@@ -570,7 +569,6 @@ export class ProductService extends AbstractService<Product> {
                 displayName: item.displayName,
                 price: bp.price > 0 ? bp.price : item.price,
                 inStock: bp.inStock > 0 ? bp.inStock : 0,
-
                 cost: item.cost,
                 sku: item.sku,
                 isBundle: false,
@@ -626,6 +624,7 @@ export class ProductService extends AbstractService<Product> {
             cost: totalCost,
             sku: item.sku,
             branchToProducts,
+            isUseProduction: item.isUseProduction,
             isBundle: true,
             bunbleItemName: bundleItemName,
             hasVariant: item.hasVariant,
@@ -706,7 +705,6 @@ export class ProductService extends AbstractService<Product> {
             displayName: item.displayName,
             price: bp.price > 0 ? bp.price : item.price,
             inStock: bp.inStock > 0 ? bp.inStock : 0,
-
             cost: item.cost,
             sku: item.sku,
             isBundle: false,
@@ -788,7 +786,7 @@ export class ProductService extends AbstractService<Product> {
     const newArray: any[] = [];
 
     for (const item of products) {
-      if (item.isBundle && item.isUseProduction) {
+      if (item.isBundle) {
         // Calcul du coût total
         const totalCost =
           item.bundleToProducts?.reduce(
@@ -816,6 +814,7 @@ export class ProductService extends AbstractService<Product> {
               price: bp.price > 0 ? bp.price : item.price,
               inStock: bp.inStock > 0 ? bp.inStock : 0,
               cost: totalCost,
+              isUseProduction: item.isUseProduction,
               sku: item.sku,
               branchToProducts,
               isBundle: true,
@@ -937,6 +936,40 @@ export class ProductService extends AbstractService<Product> {
     return inStock;
   }
 
+  async getInStockProductByBranchBySKU(
+    branchToProducts: any,
+    sku: any,
+    branchId: any,
+  ): Promise<number> {
+    let inStock: number = 0;
+    for (const el of branchToProducts.filter(
+      (b: { sku: any; branchId: any }) =>
+        b.sku == sku && b.branchId == branchId,
+    )) {
+      inStock += el.inStock ?? 0;
+    }
+
+    return inStock;
+  }
+
+  async getInStockVariantProductByBranchBySKU(
+    variantToProducts: any = [],
+    sku: any,
+    branchId: any,
+  ): Promise<number> {
+    let inStock: number = 0;
+    for (const el of variantToProducts) {
+      for (const al of el.branchVariantToProducts.filter(
+        (b: { sku: any; branchId: any }) =>
+          b.sku == sku && b.branchId == branchId,
+      )) {
+        inStock = al.inStock ?? 0;
+      }
+    }
+
+    return inStock;
+  }
+
   async getInStockItemVariantProductByBranch(
     branchVariantToProducts: any,
   ): Promise<number> {
@@ -998,6 +1031,54 @@ export class ProductService extends AbstractService<Product> {
     });
   }
 
+  async getByBranchSKU(productId: string, dto: any) {
+    const { destinationBranchId, sku } = dto;
+    const product = await this.getDetails(productId);
+    if (product.hasVariant) {
+      const variantList = product.variantToProducts.filter(
+        (variant: { productId: any; sku: any }) => variant.sku == sku,
+      );
+
+      const vbp = variantList
+        .flatMap(
+          (variant: { branchVariantToProducts: any }) =>
+            variant.branchVariantToProducts,
+        ) // Récupère toutes les entrées `branchVariantToProducts`
+        .find(
+          (branchVariant: { branchId: any; isAvailable: any; sku: any }) =>
+            branchVariant.branchId === destinationBranchId &&
+            branchVariant.sku == sku &&
+            branchVariant.isAvailable === true,
+        );
+      const bp = {
+        ...vbp,
+        price: vbp.price ?? product.price,
+      };
+
+      return bp;
+    } else {
+      const branchProduct =
+        product.branchToProducts &&
+        product.branchToProducts.find(
+          (branch: {
+            branchId: any;
+            productId: any;
+            isAvailable: boolean;
+            sku: any;
+          }) =>
+            branch.branchId === destinationBranchId &&
+            branch.productId == productId &&
+            sku == sku &&
+            branch.isAvailable === true,
+        );
+      const bp = {
+        ...branchProduct,
+        price: branchProduct.price ?? product.price,
+      };
+      return bp;
+    }
+  }
+
   /**
    * Récupère le stock actuel d'un produit pour une branche spécifique.
    */
@@ -1038,7 +1119,6 @@ export class ProductService extends AbstractService<Product> {
       if (product.id != deliveryProductData.productId) {
         deliveryProductData = { ...deliveryProductData, productId: product.id };
       }
-      console.log('ddfdf20200522', deliveryProductData);
 
       // Produit simple, on récupère directement le stock dans la branche
       const branchProduct =

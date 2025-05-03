@@ -4,11 +4,13 @@ import {
   forwardRef,
   Inject,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   DeepPartial,
+  EntityManager,
   Equal,
   FindOneOptions,
   FindOptionsWhere,
@@ -148,6 +150,93 @@ export class DeliveryService extends AbstractService<Delivery> {
     });
   };
 
+  async verifyCartStockAndUpdateStock(
+    cartItems: any,
+    dto,
+    manager?: any,
+  ): Promise<void> {
+    const aggregated = new Map<
+      string,
+      { productId: string; quantity: number }
+    >();
+    for (const item of cartItems) {
+      const { productId, sku, quantity } = item;
+      const flattened = await this.flattenProductStructure(
+        productId,
+        sku,
+        quantity,
+      );
+
+      for (const [sku, data] of flattened.entries()) {
+        const aggg = aggregated.get(sku);
+        const current = aggg?.quantity || 0;
+        aggregated.set(sku, {
+          productId: data.productId,
+          quantity: current + data.quantity,
+        });
+      }
+    }
+    // 🔹 Vérifier le stock du produit aggrege
+    console.log('aggregated', aggregated);
+
+    //verification du stock
+    for (const [sku, data] of aggregated.entries()) {
+      const productDetails = await this.productService.getDetails(
+        data.productId,
+      );
+      await this.checkStockBeforeDelivery(
+        { ...productDetails, sku: sku },
+        {
+          destinationBranchId: dto.branchId,
+          quantity: data.quantity,
+          sku: sku,
+        },
+      );
+    }
+
+    //mise a jour du stock
+    for (const [sku, data] of aggregated.entries()) {
+      const productDetails = await this.productService.getDetails(
+        data.productId,
+      );
+      await this.myUpdateStocks(
+        { ...productDetails, sku: sku },
+        {
+          ...data,
+          sku: sku,
+          destinationBranchId: dto.branchId,
+        },
+        manager,
+      );
+    }
+
+    //mettre a jour le movement du stock
+    const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
+    dto.closedById = authUser?.id;
+    //mise a jour du stock
+    for (const [sku, data] of aggregated.entries()) {
+      const productByBranchDetail = await this.productService.getByBranchSKU(
+        data.productId,
+        {
+          sku,
+          destinationBranchId: dto.branchId,
+        },
+      );
+      await this.updateStockMovements(
+        {
+          ...data,
+          destinationBranchId: dto.branchId,
+          reference: dto.reference,
+          sourceId: dto.id,
+          createdById: authUser?.id,
+          sku: sku,
+          cost: productByBranchDetail.price,
+        },
+        manager,
+      );
+    }
+  }
+
   async updateStocks(deliveryProductData: any, manager?: any): Promise<void> {
     const prd = await this.productService.getDetails(
       deliveryProductData.productId,
@@ -157,9 +246,6 @@ export class DeliveryService extends AbstractService<Delivery> {
         `Produit ${deliveryProductData.productId} introuvable`,
       );
     }
-
-    //→ Vérifie le stock avant d'autoriser une livraison.
-
     const sellingData = await this.getDetailBySellingId(
       deliveryProductData.sellingId,
     );
@@ -228,7 +314,7 @@ export class DeliveryService extends AbstractService<Delivery> {
           }
           if (
             !deliveryProductData.bundleId &&
-            (deliveryProductData.depth || 0) < 2
+            (deliveryProductData.depth || 0) < 3
           ) {
             await this.updateStockMovements(
               {
@@ -247,6 +333,66 @@ export class DeliveryService extends AbstractService<Delivery> {
         }
       }
     }
+  }
+
+  async myUpdateStocks(product, dto: any, manager?: any): Promise<void> {
+    const sellingData = await this.getDetailBySellingId(dto.sellingId);
+    if (sellingData && sellingData.sellingToProducts) {
+      await this.updateProductCost(sellingData.sellingToProducts, dto, manager);
+    }
+
+    //update product stock
+    if (product.hasVariant) {
+      await this.updateVariantStock(product.variantToProducts, dto, manager);
+    } else {
+      await this.updateProductStock(product.branchToProducts, dto, manager);
+    }
+  }
+
+  async flattenProductStructure(
+    productId: string,
+    sku: string,
+    quantity = 1,
+    result: Map<string, { productId: string; quantity: number }> = new Map(),
+    depth = 0,
+  ): Promise<Map<string, { productId: string; quantity: number }>> {
+    const product = await this.productService.getDetails(productId);
+
+    if (!product) {
+      throw new NotFoundException(`Produit ${productId} introuvable`);
+    }
+
+    // Stopper si trop de récursion (protection)
+    if (depth > 10) {
+      throw new Error('Profondeur maximale atteinte dans le flattening');
+    }
+
+    const isBundle = product.isBundle && product.bundleToProducts?.length > 0;
+
+    if (!isBundle || product.isUseProduction) {
+      // Cas 1 : produit simple ou bundle destiné à la production → on le traite comme un bloc
+      const current = result.get(sku)?.quantity || 0;
+      result.set(sku, { productId, quantity: current + quantity });
+      return result;
+    }
+
+    // Cas 2 : bundle non destiné à la production → on l'aplatit (récursif sur ses composants)
+    for (const component of product.bundleToProducts ?? []) {
+      if (!component.bundleId || !component.sku || !component.quantity)
+        continue;
+
+      const componentQty = component.quantity * quantity;
+
+      await this.flattenProductStructure(
+        component.bundleId,
+        component.sku,
+        componentQty,
+        result,
+        depth + 1,
+      );
+    }
+
+    return result;
   }
 
   async checkStocks(deliveryProductData: any): Promise<void> {
@@ -990,7 +1136,7 @@ export class DeliveryService extends AbstractService<Delivery> {
 
     const otherClosedDeliveries = await this.getOtherClosedDeliveries(delivery);
     this.validateDeliveredQuantities(delivery, otherClosedDeliveries);
-    await this.ensureSufficientStocks(delivery);
+    //await this.ensureSufficientStocks(delivery);
     await this.runInTransactionService.runInTransaction(async (manager) => {
       console.log('Transaction OK uiuiui');
       // Si tout est OK → on valide la réception
@@ -1075,8 +1221,17 @@ export class DeliveryService extends AbstractService<Delivery> {
       await this.checkStocks(deliveryProductData); // Vérifie que le stock est suffisant
     }
   }
-  private async applyStockUpdate(delivery, manager) {
-    for (const deliveryToProduct of delivery.deliveryToProducts) {
+  private async applyStockUpdate(
+    delivery: { deliveryToProducts: any },
+    manager: EntityManager,
+  ) {
+    await this.verifyCartStockAndUpdateStock(
+      delivery.deliveryToProducts,
+      delivery,
+      manager,
+    );
+
+    /* for (const deliveryToProduct of delivery.deliveryToProducts) {
       const deliveryProductData = {
         ...deliveryToProduct,
         destinationBranchId: delivery.branchId,
@@ -1084,7 +1239,7 @@ export class DeliveryService extends AbstractService<Delivery> {
         reference: delivery.reference,
       };
       await this.updateStocks(deliveryProductData, manager);
-    }
+    }*/
   }
 
   async updateStockMovements(
