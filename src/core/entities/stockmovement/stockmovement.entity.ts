@@ -78,6 +78,12 @@ export class StockMovement extends CoreEntity {
   @IsNumber()
   @IsOptional()
   @ApiProperty({ description: `Coût` })
+  @Column({ name: 'available_stock', type: 'double precision', default: 0 })
+  availableStock: number;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty({ description: `Coût` })
   @Column({ type: 'double precision', default: 0 })
   totalCost: number;
 

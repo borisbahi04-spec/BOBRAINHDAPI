@@ -190,6 +190,7 @@ export class Delivery extends CoreEntity {
     },
   )
   deliveryToAdditionalCosts: DeliveryToAdditionalCost[];
+  displayName: any;
 
   /**
    * Getters & Setters

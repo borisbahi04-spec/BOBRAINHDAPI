@@ -338,7 +338,18 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
     manager?: any,
   ) {
     for (const el of stockAdjustmentProductData) {
-      await this.updateStockMovements(el, manager);
+      const productByBranchDetail = await this.productService.getByBranchSKU(
+        el.productId,
+        {
+          sku: el.sku,
+          destinationBranchId: el.destinationBranchId,
+        },
+      );
+      console.log('dfdfdf',el, productByBranchDetail);
+      await this.updateStockMovements(
+        { ...el, availableStock: productByBranchDetail.inStock },
+        manager,
+      );
     }
   }
 
@@ -362,6 +373,7 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
         totalCost:
           stockAdjustmentProductData.quantity * stockAdjustmentProductData.cost,
         createdById: stockAdjustmentProductData.createdById,
+        availableStock: stockAdjustmentProductData.availableStock,
       });
     } else {
       // Journaliser le mouvement
@@ -380,6 +392,7 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
         totalCost:
           stockAdjustmentProductData.quantity * stockAdjustmentProductData.cost,
         //createdById: stockAdjustmentProductData.createdById,
+        availableStock: stockAdjustmentProductData.availableStock,
       });
     }
   }

@@ -152,6 +152,12 @@ export class ProductService extends AbstractService<Product> {
   async createRecord(ddto: any, file?: any): Promise<Product> {
     const filename = file?.filename;
     const dto = plainToInstance(CreateProductDto, ddto);
+    //verification de ladto. boucle de bundle
+    if (dto.isBundle && dto.bundleToProducts.length > 0) {
+      console.log('sdsdsds', dto.isBundle);
+      const componentIds = dto?.bundleToProducts?.map((c) => c.bundleId);
+      await this.detectBundleLoopFromComponents(componentIds);
+    }
     //set image
     if (filename) {
       dto.image = file?.filename;
@@ -166,7 +172,7 @@ export class ProductService extends AbstractService<Product> {
         .map((err) => Object.values(err.constraints))
         .flat();
       throw new BadRequestException(
-        `Validation failed: ${validationErrors[0]}`,
+        [`Validation failed: ${validationErrors[0]}`],
         //`Validation failed: ${validationErrors.join(', ')}`,
       );
     }
@@ -225,6 +231,12 @@ export class ProductService extends AbstractService<Product> {
   ) {
     const filename = file?.filename;
     const dto = plainToInstance(UpdateProductDto, ddto);
+
+    if (dto.isBundle && dto.bundleToProducts?.length) {
+      const children = dto.bundleToProducts.map((c) => c.bundleId);
+      await this.detectBundleLoopFromRoot(optionsWhere.id, children);
+    }
+
     const prevProduct = await this._repository.findOneBy({
       id: optionsWhere.id,
     });
@@ -239,7 +251,7 @@ export class ProductService extends AbstractService<Product> {
         .map((err) => Object.values(err.constraints))
         .flat();
       throw new BadRequestException(
-        `Validation failed: ${validationErrors[0]}`,
+        [`Validation failed: ${validationErrors[0]}`],
         //`Validation failed: ${validationErrors.join(', ')}`,
       );
     }
@@ -864,7 +876,7 @@ export class ProductService extends AbstractService<Product> {
       entity.image = _image;
     }
     if (!entity) {
-      throw new BadRequestException(this.NOT_FOUND_MESSAGE);
+      throw new BadRequestException([this.NOT_FOUND_MESSAGE]);
     }
     if (entity.isBundle) {
       //const bunPrd: any[] = [];
@@ -893,7 +905,7 @@ export class ProductService extends AbstractService<Product> {
   async deleteRecord(optionsWhere: FindOptionsWhere<Product>) {
     const entity = await this.repository.findOneBy(optionsWhere);
     if (!entity) {
-      throw new BadRequestException(this.NOT_FOUND_MESSAGE);
+      throw new BadRequestException([this.NOT_FOUND_MESSAGE]);
     }
     const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
 
@@ -1052,7 +1064,7 @@ export class ProductService extends AbstractService<Product> {
         );
       const bp = {
         ...vbp,
-        price: vbp.price ?? product.price,
+        price: vbp?.price ?? product?.price ?? 0,
       };
 
       return bp;
@@ -1073,9 +1085,73 @@ export class ProductService extends AbstractService<Product> {
         );
       const bp = {
         ...branchProduct,
-        price: branchProduct.price ?? product.price,
+        price: branchProduct?.price ?? product?.price ?? 0,
       };
       return bp;
+    }
+  }
+
+  async getById(id: any) {
+    return await this.repository.findOne({
+      where: { id: id },
+    });
+  }
+  async detectBundleLoopFromComponents(
+    componentIds: string[],
+    visited: Set<string> = new Set(),
+  ): Promise<void> {
+    for (const id of componentIds) {
+      if (visited.has(id)) {
+        const rootProduct = await this.getById(id);
+        throw new BadRequestException([
+          `Boucle détectée : le produit ${rootProduct.displayName} est utilisé de manière récursive dans un produit composé.`,
+        ]);
+      }
+
+      visited.add(id);
+
+      const product = await this.repository.findOne({
+        where: { id },
+        relations: { bundleToProducts: true },
+      });
+
+      if (!product?.isBundle || !product.bundleToProducts?.length) continue;
+
+      const childrenIds = product.bundleToProducts.map((b) => b.bundleId);
+      await this.detectBundleLoopFromComponents(childrenIds, new Set(visited));
+    }
+  }
+
+  async detectBundleLoopFromRoot(
+    rootProductId: any,
+    componentIds: string[],
+    visited: Set<string> = new Set(),
+  ): Promise<void> {
+    for (const componentId of componentIds) {
+      if (componentId === rootProductId) {
+        const rootProduct = await this.getById(rootProductId);
+        throw new BadRequestException([
+          `Boucle de dépendance détectée : le produit ${rootProduct.displayName} contient indirectement lui-même.`,
+        ]);
+      }
+
+      if (visited.has(componentId)) continue;
+
+      visited.add(componentId);
+
+      const component = await this.repository.findOne({
+        where: { id: componentId },
+        relations: { bundleToProducts: true },
+      });
+
+      if (!component?.isBundle || !component.bundleToProducts?.length) continue;
+
+      const children = component.bundleToProducts.map((b) => b.bundleId);
+      await this.detectBundleLoopFromRoot(
+        rootProductId,
+        children,
+        new Set(visited),
+      );
     }
   }
 

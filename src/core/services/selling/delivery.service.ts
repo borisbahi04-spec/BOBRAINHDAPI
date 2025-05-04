@@ -120,6 +120,16 @@ export class DeliveryService extends AbstractService<Delivery> {
         throw new BadRequestException(['Commande introuvable']);
       }
 
+      for (const item of dto.deliveryToProducts) {
+        const hasCycle = await this.hasCyclicDependency(item.productId);
+        if (hasCycle) {
+          const rootProduct = await this.productService.getById(item.productId);
+          throw new BadRequestException([
+            `Boucle de dépendance détectée pour le produit ${rootProduct.displayName}`,
+          ]);
+        }
+      }
+
       const delivery = await super.createRecord({
         ...dto,
         branchId: authUser.targetBranchId,
@@ -231,10 +241,34 @@ export class DeliveryService extends AbstractService<Delivery> {
           createdById: authUser?.id,
           sku: sku,
           cost: productByBranchDetail.price,
+          availableStock: productByBranchDetail.inStock,
         },
         manager,
       );
     }
+  }
+
+  async hasCyclicDependency(
+    productId: string,
+    visited: Set<string> = new Set(),
+  ): Promise<boolean> {
+    if (visited.has(productId)) return true;
+
+    const product = await this.productService.getDetails(productId);
+
+    // Si ce n'est pas un bundle, on n'analyse pas plus loin
+    if (!product.isBundle) return false;
+
+    visited.add(productId);
+
+    const children = product.bundleToProducts?.map((p) => p.bundleId) || [];
+    for (const childId of children) {
+      if (await this.hasCyclicDependency(childId, new Set(visited))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   async updateStocks(deliveryProductData: any, manager?: any): Promise<void> {
@@ -1260,6 +1294,7 @@ export class DeliveryService extends AbstractService<Delivery> {
         reason: ReasonTypeEnum.delivery,
         totalCost: deliveryProductData.quantity * deliveryProductData.cost,
         createdById: deliveryProductData.createdById,
+        availableStock: deliveryProductData.availableStock,
       });
     } else {
       // Journaliser le mouvement
@@ -1276,6 +1311,7 @@ export class DeliveryService extends AbstractService<Delivery> {
         reason: ReasonTypeEnum.delivery,
         totalCost: deliveryProductData.quantity * deliveryProductData.cost,
         isManual: false,
+        availableStock: deliveryProductData.availableStock,
       });
     }
   }

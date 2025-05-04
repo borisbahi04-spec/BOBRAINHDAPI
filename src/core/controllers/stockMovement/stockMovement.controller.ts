@@ -31,6 +31,7 @@ import { UpdateStockMovementDto } from 'src/core/dto/stockMovement/update-stockM
 import { StockMovement } from 'src/core/entities/stockmovement/stockmovement.entity';
 import { CreateStockMovementDto } from 'src/core/dto/stockMovement/create-stockMovement.dto';
 import { StockMovementService } from 'src/core/services/stockMovement/stockMovement.service';
+import { merge } from 'lodash';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
@@ -62,6 +63,12 @@ export class StockMovementController {
       {
         textFilterFields: ['displayName'],
       },
+    );
+
+    // Apply auth user branch filter
+    options.where = merge(
+      options?.where,
+      await this.service.getFilterByAuthUserBranch(),
     );
 
     return this.service.readPaginatedListRecord(options);
@@ -119,7 +126,10 @@ export class StockMovementController {
     @Body() dto: UpdateStockMovementDto,
     @Query() query?: any,
   ): Promise<StockMovement> {
-    const stockmovement = await this.service.updateRecord({ id: id ?? '' }, dto);
+    const stockmovement = await this.service.updateRecord(
+      { id: id ?? '' },
+      dto,
+    );
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,

@@ -33,6 +33,7 @@ import { ProductService } from '../product/product.service';
 import { RunInTransactionService } from '../transaction/runInTransaction.service';
 import { StockMovementService } from '../stockMovement/stockMovement.service';
 import { ProductToTransfertOrder } from 'src/core/entities/stockmanagement/product-to-transfertorder.entity';
+import { availableParallelism } from 'os';
 
 @Injectable()
 export class TransfertOrderService extends AbstractService<TransfertOrder> {
@@ -438,8 +439,21 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
     const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
     const { productToTransfertOrders } = transfertOrder;
     for (const productTotransfertOrder of productToTransfertOrders) {
+      const sproductByBranchDetail = await this.productService.getByBranchSKU(
+        productTotransfertOrder.productId,
+        {
+          sku: productTotransfertOrder.sku,
+          destinationBranchId: transfertOrder.sourceBranchId,
+        },
+      );
+      const dproductByBranchDetail = await this.productService.getByBranchSKU(
+        productTotransfertOrder.productId,
+        {
+          sku: productTotransfertOrder.sku,
+          destinationBranchId: transfertOrder.destinationBranchId,
+        },
+      );
       let produit: any;
-
       const prd = await this.productService.getDetails(
         productTotransfertOrder.productId,
       );
@@ -471,6 +485,8 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
         sourceId: transfertOrder.id,
         createdById: authUser?.id,
         cost: produit.price,
+        savailableStock: sproductByBranchDetail.inStock,
+        davailableStock: dproductByBranchDetail.inStock,
       };
       await this.updateStockMovements(productTotransfertOrdersData, manager);
     }
@@ -496,6 +512,7 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
         totalCost:
           -transfertOrderProductData.quantity * transfertOrderProductData.cost,
         createdById: transfertOrderProductData.createdById,
+        availableStock: transfertOrderProductData.savailableStock,
       });
       await manager.getRepository(this.stockMovementService.entity).save({
         productId: transfertOrderProductData.productId,
@@ -512,6 +529,7 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
         totalCost:
           transfertOrderProductData.quantity * transfertOrderProductData.cost,
         createdById: transfertOrderProductData.createdById,
+        availableStock: transfertOrderProductData.davailableStock,
       });
     } else {
       // Journaliser le mouvement
@@ -530,6 +548,7 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
         totalCost:
           -transfertOrderProductData.quantity * transfertOrderProductData.cost,
         //createdById: transfertOrderProductData.createdById,
+        availableStock: transfertOrderProductData.savailableStock,
       });
       await this.stockMovementService.createRecord({
         productId: transfertOrderProductData.productId,
@@ -546,6 +565,7 @@ export class TransfertOrderService extends AbstractService<TransfertOrder> {
         totalCost:
           transfertOrderProductData.quantity * transfertOrderProductData.cost,
         //createdById: transfertOrderProductData.createdById,
+        availableStock: transfertOrderProductData.davailableStock,
       });
     }
   }

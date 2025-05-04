@@ -199,6 +199,7 @@ export class ReceptionService extends AbstractService<Reception> {
         reason: ReasonTypeEnum.reception,
         totalCost: receptionProductData.quantity * receptionProductData.cost,
         createdById: receptionProductData.createdById,
+        availableStock: receptionProductData.availableStock,
       });
     } else {
       // Journaliser le mouvement
@@ -215,6 +216,7 @@ export class ReceptionService extends AbstractService<Reception> {
         reason: ReasonTypeEnum.reception,
         totalCost: receptionProductData.quantity * receptionProductData.cost,
         isManual: false,
+        availableStock: receptionProductData.availableStock,
       });
     }
   }
@@ -552,12 +554,20 @@ export class ReceptionService extends AbstractService<Reception> {
     const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
     reception.closedById = authUser?.id;
     for (const receptionToProduct of reception.receptionToProducts) {
+      const productByBranchDetail = await this.productService.getByBranchSKU(
+        receptionToProduct.productId,
+        {
+          sku: receptionToProduct.sku,
+          destinationBranchId: reception.branchId,
+        },
+      );
       const receptionProductData = {
         ...receptionToProduct,
         destinationBranchId: reception.branchId,
         reference: reception.reference,
         sourceId: reception.id,
         createdById: authUser?.id,
+        availableStock: productByBranchDetail.inStock,
       };
       await this.updateStockMovements(receptionProductData, manager);
     }

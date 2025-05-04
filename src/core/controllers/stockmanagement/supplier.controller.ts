@@ -66,26 +66,6 @@ export class SupplierController {
     return this.service.readPaginatedListRecord(options);
   }
 
-  /**
-   * Get supplier by id
-   */
-  @ApiSearchOneQueryFilter()
-  @Get(':supplierId')
-  async findOne(
-    @Param('supplierId', ParseUUIDPipe) id: string,
-    @Query() query?: any,
-  ): Promise<Supplier> {
-    const options = buildFilterFromApiSearchParams(
-      this.service.repository,
-      query as ApiSearchOneParamOptions,
-    );
-
-    return this.service.readOneRecord({
-      ...options,
-      where: { ...options?.where, id: id ?? '' },
-    });
-  }
-
   @ApiSearchOneQueryFilter()
   @Get('getunique')
   async getUnique(@Query() query: Record<string, any>): Promise<any> {
@@ -114,6 +94,26 @@ export class SupplierController {
         ...options?.where,
         ...filters,
       },
+    });
+  }
+
+  /**
+   * Get supplier by id
+   */
+  @ApiSearchOneQueryFilter()
+  @Get(':supplierId')
+  async findOne(
+    @Param('supplierId', ParseUUIDPipe) id: string,
+    @Query() query?: any,
+  ): Promise<Supplier> {
+    const options = buildFilterFromApiSearchParams(
+      this.service.repository,
+      query as ApiSearchOneParamOptions,
+    );
+
+    return this.service.readOneRecord({
+      ...options,
+      where: { ...options?.where, id: id ?? '' },
     });
   }
 

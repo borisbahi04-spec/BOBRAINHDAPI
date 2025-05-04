@@ -35,6 +35,17 @@ export class StockMovementService extends AbstractService<StockMovement> {
     });
   }
 
+  async getFilterByAuthUserBranch(): Promise<FindOptionsWhere<StockMovement>> {
+    const authUser = await super.checkSessionBranch();
+    if (!(await authUser.can('manage', 'all'))) {
+      return {
+        branchId: authUser.targetBranchId,
+      };
+    }
+
+    return {};
+  }
+
   get repository(): Repository<StockMovement> {
     return this._repository;
   }

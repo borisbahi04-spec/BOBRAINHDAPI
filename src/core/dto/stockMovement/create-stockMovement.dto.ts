@@ -19,6 +19,7 @@ export class CreateStockMovementDto extends PickType(StockMovement, [
   'branchId',
   'reference',
   'cost',
+  'availableStock',
 ] as const) {
   @IsOptional()
   @ApiProperty({

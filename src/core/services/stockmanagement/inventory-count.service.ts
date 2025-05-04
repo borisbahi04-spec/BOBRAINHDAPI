@@ -183,75 +183,6 @@ export class InventoryCountService extends AbstractService<InventoryCount> {
     return result;
   }
 
-  /*async updateRecordCountSave(
-    optionsWhere: FindOptionsWhere<any>,
-    dto: UpdateInventoryCountSaveDto,
-  ): Promise<InventoryCount> {
-    const previousIC = await this.repository.findOneBy(optionsWhere);
-
-    if (previousIC.status == InventoryCountStatusEnum.completed) {
-      throw new BadRequestException(
-        'Impossible de modifier le statut déjà complété',
-      );
-    }
-
-    if (dto.action === InventoryCountStatusEnum.inProgress) {
-      dto.status = InventoryCountStatusEnum.inProgress;
-    }
-    if (dto.action === InventoryCountStatusEnum.completed) {
-      dto.status = InventoryCountStatusEnum.completed;
-    }
-
-    dto.productToInventoryCounts = dto.productToInventoryCounts
-      .filter((dt) => dt.difference != 0)
-      .map((dt) => ({ ...dt }));
-
-    if (!dto.productToInventoryCounts.length) {
-      throw new NotFoundException(['Rien à modifier']);
-    }
-
-    return await this.runInTransactionService.runInTransaction(
-      async (manager) => {
-        const { productToInventoryCounts, ...restDto } = dto;
-        const toUpdate = await manager.preload(InventoryCount, {
-          id: optionsWhere.id as string,
-          ...restDto,
-        });
-
-        if (!toUpdate) {
-          throw new NotFoundException('InventoryCount introuvable');
-        }
-
-        const updatedInventoryCount = await manager.save(toUpdate);
-
-        if (updatedInventoryCount?.id) {
-          await manager.delete(ProductToInventoryCount, {
-            inventoryCountId: updatedInventoryCount.id,
-          });
-
-          for (const prod of productToInventoryCounts) {
-            await manager.save(ProductToInventoryCount, {
-              ...prod,
-              inventoryCountId: updatedInventoryCount.id,
-            });
-          }
-        }
-
-        if (dto.action === InventoryCountStatusEnum.completed) {
-          const ddto = {
-            ...dto,
-            sourceId: updatedInventoryCount.id,
-            reference: updatedInventoryCount.reference,
-          };
-          await this.applyStockUpdate(dto, manager);
-          await this.applyStockMouvementUpdate(ddto, manager);
-        }
-
-        return updatedInventoryCount;
-      },
-    );
-  }*/
-
   async updateRecordCountSave(
     optionsWhere: FindOptionsWhere<any>,
     dto: UpdateInventoryCountSaveDto,
@@ -378,12 +309,20 @@ export class InventoryCountService extends AbstractService<InventoryCount> {
   private async applyStockMouvementUpdate(inventoryCount: any, manager?: any) {
     const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
     for (const productToInventoryCount of inventoryCount.productToInventoryCounts) {
+      const productByBranchDetail = await this.productService.getByBranchSKU(
+        productToInventoryCount.productId,
+        {
+          sku: productToInventoryCount.sku,
+          destinationBranchId: inventoryCount.branchId,
+        },
+      );
       const productToInventoryCountData = {
         ...productToInventoryCount,
         destinationBranchId: inventoryCount.branchId,
         reference: inventoryCount.reference,
         sourceId: inventoryCount.sourceId,
         createdById: authUser?.id,
+        availableStock: productByBranchDetail.inStock,
       };
       await this.updateStockMovements(productToInventoryCountData, manager);
     }
@@ -412,6 +351,7 @@ export class InventoryCountService extends AbstractService<InventoryCount> {
         totalCost:
           inventoryCountProductData.difference * inventoryCountProductData.cost,
         createdById: inventoryCountProductData.createdById,
+        availableStock: inventoryCountProductData.availableStock,
       });
     } else {
       // Journaliser le mouvement
@@ -432,6 +372,7 @@ export class InventoryCountService extends AbstractService<InventoryCount> {
         isManual: true,
         totalCost:
           inventoryCountProductData.difference * inventoryCountProductData.cost,
+        availableStock: inventoryCountProductData.availableStock,
       });
     }
   }
