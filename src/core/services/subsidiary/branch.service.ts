@@ -32,4 +32,12 @@ export class BranchService extends AbstractService<Branch> {
 
     return {};
   }
+
+  async getAllBranchIds(): Promise<string[]> {
+    const branches = await this.repository.find({
+      select: ['id'],
+      where: { deletedAt: null }, // facultatif : si tu utilises soft delete
+    });
+    return branches.map((branch) => branch.id);
+  }
 }

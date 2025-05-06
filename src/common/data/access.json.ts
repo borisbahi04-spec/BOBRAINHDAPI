@@ -22,6 +22,7 @@ export const getDefaultAccesss = () => {
         [AbilitySubjectEnum.Inventory]: false,
         [AbilitySubjectEnum.Setting]: false,
         [AbilitySubjectEnum.StockMovement]: false,
+        [AbilitySubjectEnum.Production]: false,
       },
       permissions: <PermissionsType>{
         create: false,

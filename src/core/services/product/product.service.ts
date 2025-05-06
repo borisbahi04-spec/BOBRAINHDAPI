@@ -8,6 +8,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   forwardRef,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
@@ -34,6 +35,11 @@ import { AuthUser } from 'src/core/entities/session/auth-user.entity';
 import { TaxService } from '../setting/tax.service';
 import { TaxToProductService } from './tax-to-product.service';
 import { VariantToProduct } from 'src/core/entities/product/variant-to-product.entity';
+import { DeliveryToProduct } from 'src/core/entities/selling/delivery-to-product.entity';
+import { ProductionToProduct } from 'src/core/entities/stockmanagement/production-to-product.entity';
+import { BranchToProduct } from 'src/core/entities/subsidiary/branch-to-product.entity';
+import { BranchService } from '../subsidiary/branch.service';
+import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 
 @Injectable()
 export class ProductService extends AbstractService<Product> {
@@ -48,6 +54,16 @@ export class ProductService extends AbstractService<Product> {
     @Inject(forwardRef(() => TaxService))
     private readonly taxService: TaxService,
     private readonly taxToProductService: TaxToProductService,
+    @InjectRepository(DeliveryToProduct)
+    private readonly deliveryToProductRepository: Repository<DeliveryToProduct>,
+
+    @InjectRepository(ProductionToProduct)
+    private readonly productionToProductRepository: Repository<ProductionToProduct>,
+    @InjectRepository(BranchToProduct)
+    private readonly branchToProductRepository: Repository<BranchToProduct>,
+
+    @Inject(forwardRef(() => BranchService))
+    private branchService: BranchService, // ✅ Injection i
 
     protected paginatedService: PaginatedService<Product>,
     @Inject(REQUEST) protected request: any,
@@ -154,7 +170,6 @@ export class ProductService extends AbstractService<Product> {
     const dto = plainToInstance(CreateProductDto, ddto);
     //verification de ladto. boucle de bundle
     if (dto.isBundle && dto.bundleToProducts.length > 0) {
-      console.log('sdsdsds', dto.isBundle);
       const componentIds = dto?.bundleToProducts?.map((c) => c.bundleId);
       await this.detectBundleLoopFromComponents(componentIds);
     }
@@ -233,8 +248,20 @@ export class ProductService extends AbstractService<Product> {
     const dto = plainToInstance(UpdateProductDto, ddto);
 
     if (dto.isBundle && dto.bundleToProducts?.length) {
-      const children = dto.bundleToProducts.map((c) => c.bundleId);
-      await this.detectBundleLoopFromRoot(optionsWhere.id, children);
+      const allBranchIds = await this.branchService.getAllBranchIds(); // méthode à toi
+      for (const branchId of allBranchIds) {
+        const isLocked = await this.isBundleLockedInBranch(
+          optionsWhere.id as any,
+          branchId,
+        );
+        if (isLocked) {
+          throw new BadRequestException([
+            `Le produit composé ne peut pas être modifié : déjà utilisé dans la branche ${branchId}.`,
+          ]);
+        }
+        const children = dto.bundleToProducts.map((c) => c.bundleId);
+        await this.detectBundleLoopFromRoot(optionsWhere.id, children);
+      }
     }
 
     const prevProduct = await this._repository.findOneBy({
@@ -402,7 +429,6 @@ export class ProductService extends AbstractService<Product> {
       products.data,
       authUser,
     );
-    console.log('eaeolingerlll', newArray);
     newArray.push(...bundleProducts);
     return newArray;
   }
@@ -412,8 +438,13 @@ export class ProductService extends AbstractService<Product> {
     page?: number,
     perPage?: number,
   ) {
+    const authUser = await super.checkSessionBranch();
     const products = await this.readPaginatedListRecord(options, page, perPage);
-    const newArray = this.generateNewProductionProductVersion(products.data);
+    const newArray = this.generateNewProductionProductVersion(
+      products.data,
+      authUser,
+    );
+    console.log('azazaazza2555', newArray);
     return newArray;
   }
 
@@ -429,88 +460,184 @@ export class ProductService extends AbstractService<Product> {
 
     return newArray;
   }
-  /*async generateNewProductVersion(
-    products: Array<object>,
-    authUser?: AuthUser,
-  ) {
-    const newArray: Array<object> = [];
-    for (const item of products as any) {
-      if (!item.isBundle && item.trackStock) {
-        if (item.hasVariant) {
-          if (item.variantToProducts.length > 0) {
-            for (const vp of item.variantToProducts) {
-              const branchVariantToProducts = vp.branchVariantToProducts.filter(
-                (e: any) => e.isAvailable == true,
-              );
 
-              if (branchVariantToProducts.length > 0) {
-                const bp = branchVariantToProducts.find(
-                  (e: any) =>
-                    e.isAvailable === true &&
-                    e.branchId === authUser.targetBranchId,
-                );
+  async flattenProductStructure(
+    productId: string,
+    sku: string,
+    quantity = 1,
+    result: Map<string, { productId: string; quantity: number }> = new Map(),
+    depth = 0,
+  ): Promise<Map<string, { productId: string; quantity: number }>> {
+    const product = await this.getDetails(productId);
 
-                const newItem = {
-                  id: item.id,
-                  reference: item.reference,
-                  variantId: vp.id,
-                  hasVariant: item.hasVariant,
-                  isBundle: false,
-                  isUseProduction: false,
-                  categoryName: item?.category.displayName,
-                  categoryId: item?.categoryId,
-                  barreCode: vp.barreCode,
-                  bunbleItemName: null,
-                  displayName: `${item.displayName}(${vp.name})`,
-                  price: bp.price > 0 ? bp.price : vp.price,
-                  cost: vp.cost,
-                  sku: vp.sku,
-                  image: item.image,
-                  colorShape: item.colorShape,
-                  branchVariantToProducts: branchVariantToProducts,
-                  branchToProducts: [],
-                };
-                newArray.push(newItem);
-              }
-            }
-          }
-        } else if (item.branchToProducts.length > 0) {
-          const branchToProducts = item.branchToProducts.filter(
-            (e: any) => e.isAvailable === true,
-          );
-          if (branchToProducts.length > 0) {
-            const bp = branchToProducts.find(
-              (e: any) =>
-                e.isAvailable === true &&
-                e.branchId === authUser.targetBranchId,
-            );
+    if (!product) {
+      throw new NotFoundException(`Produit ${product.displayName} introuvable`);
+    }
 
-            const newItem = {
-              id: item.id,
-              reference: item.reference,
-              barreCode: item.barreCode,
-              displayName: item.displayName,
-              price: bp.price > 0 ? bp.price : item.price,
-              cost: item.cost,
-              sku: item.sku,
-              isBundle: item.isUseProduction,
-              isUseProduction: item.isUseProduction,
-              categoryName: item?.category.displayName,
-              categoryId: item?.categoryId,
-              hasVariant: item.hasVariant,
-              bunbleItemName: null,
-              variantId: null,
-              image: item.image,
-              colorShape: item.colorShape,
-              branchToProducts: branchToProducts,
-              branchVariantToProducts: [],
-            };
-            newArray.push(newItem);
-          }
-        }
+    // Stopper si trop de récursion (protection)
+    if (depth > 10) {
+      throw new Error('Profondeur maximale atteinte dans le flattening');
+    }
+
+    const isBundle = product.isBundle && product.bundleToProducts?.length > 0;
+
+    if (!isBundle || product.isUseProduction) {
+      // Cas 1 : produit simple ou bundle destiné à la production → on le traite comme un bloc
+      const current = result.get(sku)?.quantity || 0;
+      result.set(sku, { productId, quantity: current + quantity });
+      return result;
+    }
+    // ✅ Cas 2 : bundle NON destiné à la production → ajouter le bundle lui-même
+    const current = result.get(sku)?.quantity || 0;
+    result.set(sku, { productId, quantity: current + quantity });
+
+    // Cas 2 : bundle non destiné à la production → on l'aplatit (récursif sur ses composants)
+    for (const component of product.bundleToProducts ?? []) {
+      if (!component.bundleId || !component.sku || !component.quantity)
+        continue;
+
+      const componentQty = component.quantity * quantity;
+
+      await this.flattenProductStructure(
+        component.bundleId,
+        component.sku,
+        componentQty,
+        result,
+        depth + 1,
+      );
+    }
+
+    return result;
+  }
+
+  async flattenProductStructureForProduction(
+    productId: string,
+    sku: string,
+    quantity = 1,
+    result: Map<string, { productId: string; quantity: number }> = new Map(),
+    depth = 0,
+  ): Promise<Map<string, { productId: string; quantity: number }>> {
+    const product = await this.getDetails(productId);
+
+    if (!product) {
+      throw new NotFoundException(`Produit ${product.displayName} introuvable`);
+    }
+
+    // Stopper si trop de récursion (protection)
+    if (depth > 10) {
+      throw new Error('Profondeur maximale atteinte dans le flattening');
+    }
+    console.log('sdsds888888d', product.bundleToProducts);
+    const isBundle = product.isBundle && product.bundleToProducts?.length > 0;
+
+    if (!isBundle) {
+      // Cas 1 : produit simple ou bundle destiné à la production → on le traite comme un bloc
+      const current = result.get(sku)?.quantity || 0;
+      result.set(sku, { productId, quantity: current + quantity });
+      return result;
+    }
+    // Cas 2 : bundle non destiné à la production → on l'aplatit (récursif sur ses composants)
+    for (const component of product.bundleToProducts ?? []) {
+      if (!component.bundleId || !component.sku || !component.quantity)
+        continue;
+
+      const componentQty = component.quantity * quantity;
+
+      await this.flattenProductStructureForProduction(
+        component.bundleId,
+        component.sku,
+        componentQty,
+        result,
+        depth + 1,
+      );
+    }
+
+    return result;
+  }
+
+  async aggregatedFlattenedProductForProduction(
+    cartItems: Array<{ productId: string; sku: string; quantity: number }>,
+  ): Promise<Map<string, { productId: string; quantity: number }>> {
+    const aggregated = new Map<
+      string,
+      { productId: string; quantity: number }
+    >();
+
+    for (const item of cartItems) {
+      const { productId, sku, quantity } = item;
+
+      const flattened = await this.flattenProductStructureForProduction(
+        productId,
+        sku,
+        quantity,
+      );
+
+      for (const [sku, data] of flattened.entries()) {
+        const existing = aggregated.get(sku);
+        const currentQty = existing?.quantity || 0;
+
+        aggregated.set(sku, {
+          productId: data.productId,
+          quantity: currentQty + data.quantity,
+        });
       }
     }
-    return newArray;
+
+    return aggregated;
+  }
+  async aggregatedFlattenedProduct(
+    cartItems: Array<{ productId: string; sku: string; quantity: number }>,
+  ): Promise<Map<string, { productId: string; quantity: number }>> {
+    const aggregated = new Map<
+      string,
+      { productId: string; quantity: number }
+    >();
+
+    for (const item of cartItems) {
+      const { productId, sku, quantity } = item;
+
+      const flattened = await this.flattenProductStructure(
+        productId,
+        sku,
+        quantity,
+      );
+
+      for (const [sku, data] of flattened.entries()) {
+        const existing = aggregated.get(sku);
+        const currentQty = existing?.quantity || 0;
+
+        aggregated.set(sku, {
+          productId: data.productId,
+          quantity: currentQty + data.quantity,
+        });
+      }
+    }
+
+    return aggregated;
+  }
+
+  /*async aggregatedFlattenedProduct(cartItems: []) {
+    const aggregated = new Map<
+      string,
+      { productId: string; quantity: number }
+    >();
+    for (const item of cartItems) {
+      const { productId, sku, quantity } = item;
+      const flattened = await this.flattenProductStructure(
+        productId,
+        sku,
+        quantity,
+      );
+
+      for (const [sku, data] of flattened.entries()) {
+        const aggg = aggregated.get(sku);
+        const current = aggg?.quantity || 0;
+        aggregated.set(sku, {
+          productId: data.productId,
+          quantity: current + data.quantity,
+        });
+      }
+    }
   }*/
 
   getProductBranchPrice(bToProducts, targetBranchId) {
@@ -745,55 +872,6 @@ export class ProductService extends AbstractService<Product> {
       .map((item) => `${item.quantity}× ${item.bundle.displayName}`)
       .join(', ');
   }
-  /*async generateNewProductionProductVersion(
-    products: Array<object>,
-    authUser?: any,
-  ) {
-    const newArray: Array<object> = [];
-    for (const item of products as any) {
-      if (item.isBundle && item.isUseProduction) {
-        const _costsum = item.bundleToProducts.reduce(
-          (accumulator: any, currentObject: { cost: any }) => {
-            return accumulator + currentObject.cost;
-          },
-          0,
-        );
-        const bunbleItemName = this.getBundleItemName(item.bundleToProducts);
-        const branchToProducts = item.branchToProducts.filter(
-          (e: any) => e.isAvailable === true,
-        );
-        if (branchToProducts.length > 0) {
-          const bp = item.branchToProducts.find(
-            (e: any) =>
-              e.isAvailable === true && e.branchId === authUser.targetBranchId,
-          );
-
-          const newItem = {
-            id: item.id,
-            reference: item.reference,
-            barreCode: item.barreCode,
-            displayName: item.displayName,
-            price: bp.price > 0 ? bp.price : item.price,
-            cost: _costsum,
-            sku: item.sku,
-            branchToProducts: item.branchToProducts,
-            isBundle: true,
-            bunbleItemName: bunbleItemName,
-            hasVariant: item.hasVariant,
-            categoryName: item?.category.displayName,
-            image: item.image,
-            colorShape: item.colorShape,
-            variantId: null,
-            branchVariantToProducts: [],
-          };
-
-          newArray.push(newItem);
-        }
-      }
-    }
-    return newArray;
-  }*/
-
   async generateNewProductionProductVersion(products: any[], authUser?: any) {
     const newArray: any[] = [];
 
@@ -851,8 +929,15 @@ export class ProductService extends AbstractService<Product> {
     page?: number,
     perPage?: number,
   ) {
-    const products = await this.readPaginatedListRecord(options, page, perPage);
-    const array: Array<object> = [];
+    const products = await this.readPaginatedListRecordForSelling(
+      options,
+      page,
+      perPage,
+    );
+    const filters = products.filter(
+      (e) => !e.isBundle || (e.isBundle && e.isUseProduction === false),
+    );
+    /*const array: Array<object> = [];
     for (const item of products.data as any) {
       if (item.trackStock) {
         if (!item.isBundle) {
@@ -864,8 +949,8 @@ export class ProductService extends AbstractService<Product> {
           }
         }
       }
-    }
-    return array;
+    }*/
+    return filters;
   }
 
   async readOneRecord(options?: FindOneOptions<any>) {
@@ -1004,6 +1089,57 @@ export class ProductService extends AbstractService<Product> {
 
   async isBundle(productId: string) {
     return await this.repository.existsBy({ id: productId, isBundle: true });
+  }
+
+  async isUseProduction(productId: string) {
+    return await this.repository.existsBy({
+      id: productId,
+      isUseProduction: true,
+    });
+  }
+
+  async isSoldInBranch(productId: string, branchId: string): Promise<boolean> {
+    const count = await this.deliveryToProductRepository.count({
+      where: { productId, delivery: { branchId: branchId } },
+      relations: { delivery: true },
+    });
+    return count > 0;
+  }
+
+  async isUsedInProductionInBranch(
+    productId: string,
+    branchId: string,
+  ): Promise<boolean> {
+    const count = await this.productionToProductRepository.count({
+      where: {
+        productId,
+        production: { destinationBranchId: branchId },
+      },
+      relations: { production: true },
+    });
+    return count > 0;
+  }
+
+  async isInStockInBranch(
+    productId: string,
+    branchId: string,
+  ): Promise<boolean> {
+    const branchToProduct = await this.branchToProductRepository.findOne({
+      where: { productId, branchId },
+    });
+    return !!branchToProduct && branchToProduct.inStock > 0;
+  }
+
+  async isBundleLockedInBranch(
+    productId: string,
+    branchId: string,
+  ): Promise<boolean> {
+    const [sold, used, inStock] = await Promise.all([
+      this.isSoldInBranch(productId, branchId),
+      this.isUsedInProductionInBranch(productId, branchId),
+      this.isInStockInBranch(productId, branchId),
+    ]);
+    return sold || used || inStock;
   }
 
   async getAverageMarginItemVariantProduct(

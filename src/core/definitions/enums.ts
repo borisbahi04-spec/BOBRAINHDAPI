@@ -41,6 +41,7 @@ export enum AbilitySubjectEnum {
   Reason = 'Reason',
   OpenTicket = 'OpenTicket',
   StockMovement = 'StockMovement',
+  Production = 'Production',
 }
 
 export enum AbilityActionEnum {
@@ -163,6 +164,8 @@ export enum StockMovementSourceEnum {
   stockAdjustement = 'stockAdjustement',
   inventoryCount = 'inventoryCount',
   transfertOrder = 'transfertOrder',
+  production = 'production',
+  disassembly = 'disassembly',
 }
 
 export enum CorderStatusEnum {
@@ -205,6 +208,8 @@ export enum ReasonTypeEnum {
   ajustementLoss = 'Ajustement negatif pour reduit le stock. Article perdu',
   inventoryCount = 'Inventaire de stock',
   transfertOrder = 'Transfert de stock',
+  production = 'Production de produit',
+  disassembly = 'Dessassemblage de produit',
 }
 
 export enum DefaultTransferOrderTypeEnum {

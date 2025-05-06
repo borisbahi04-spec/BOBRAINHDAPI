@@ -162,16 +162,13 @@ export class DeliveryService extends AbstractService<Delivery> {
 
   async verifyCartStockAndUpdateStock(
     cartItems: any,
-    dto,
+    dto: any,
     manager?: any,
   ): Promise<void> {
-    const aggregated = new Map<
-      string,
-      { productId: string; quantity: number }
-    >();
-    for (const item of cartItems) {
+    //let aggregated = new Map<string, { productId: string; quantity: number }>();
+    /*for (const item of cartItems) {
       const { productId, sku, quantity } = item;
-      const flattened = await this.flattenProductStructure(
+      const flattened = await this.productService.flattenProductStructure(
         productId,
         sku,
         quantity,
@@ -185,9 +182,10 @@ export class DeliveryService extends AbstractService<Delivery> {
           quantity: current + data.quantity,
         });
       }
-    }
+    }*/
+    const aggregated =
+      await this.productService.aggregatedFlattenedProduct(cartItems);
     // 🔹 Vérifier le stock du produit aggrege
-    console.log('aggregated', aggregated);
 
     //verification du stock
     for (const [sku, data] of aggregated.entries()) {
@@ -232,6 +230,17 @@ export class DeliveryService extends AbstractService<Delivery> {
           destinationBranchId: dto.branchId,
         },
       );
+      // ✅ Vérifie si c’est un bundle ET qu’il n’est pas destiné à la production
+      const isBundle = await this.productService.isBundle(data.productId);
+      const isUseProduction = await this.productService.isUseProduction(
+        data.productId,
+      );
+
+      if (isBundle && !isUseProduction) {
+        // ⛔️ Ne pas créer de mouvement pour ce type de bundle
+        continue;
+      }
+
       await this.updateStockMovements(
         {
           ...data,
@@ -383,7 +392,7 @@ export class DeliveryService extends AbstractService<Delivery> {
     }
   }
 
-  async flattenProductStructure(
+  /*async flattenProductStructure(
     productId: string,
     sku: string,
     quantity = 1,
@@ -427,7 +436,7 @@ export class DeliveryService extends AbstractService<Delivery> {
     }
 
     return result;
-  }
+  }*/
 
   async checkStocks(deliveryProductData: any): Promise<void> {
     //try {

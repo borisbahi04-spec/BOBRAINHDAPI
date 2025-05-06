@@ -16,7 +16,15 @@ import { CreateProductionDto } from 'src/core/dto/stockmanagement/create-product
 import { UpdateProductionDto } from 'src/core/dto/stockmanagement/update-production.dto';
 import { BranchToProductService } from '../subsidiary/branch-to-product.service';
 import { ProductService } from '../product/product.service';
-import { ProductionStatusEnum } from 'src/core/definitions/enums';
+import {
+  ProductionStatusEnum,
+  ReasonTypeEnum,
+  StockMovementSourceEnum,
+  StockMovementTypeEnum,
+} from 'src/core/definitions/enums';
+import { RunInTransactionService } from '../transaction/runInTransaction.service';
+import { BranchVariantToProductService } from '../subsidiary/branch-variant-to-product.service';
+import { StockMovementService } from '../stockMovement/stockMovement.service';
 
 @Injectable()
 export class ProductionService extends AbstractService<Production> {
@@ -27,6 +35,9 @@ export class ProductionService extends AbstractService<Production> {
     private _repository: Repository<Production>,
     private readonly branchToProductService: BranchToProductService,
     private readonly productService: ProductService,
+    private readonly runInTransactionService: RunInTransactionService,
+    private readonly branchVariantToProductService: BranchVariantToProductService,
+    private readonly stockMovementService: StockMovementService,
 
     protected paginatedService: PaginatedService<Production>,
     @Inject(REQUEST) protected request: any,
@@ -62,7 +73,6 @@ export class ProductionService extends AbstractService<Production> {
     );
     // Update response data with detailed records
     response.data = detailedRecords;
-    console.log('tettetet', response);
     // Update response data with processed items and return
     return response;
   }
@@ -145,65 +155,184 @@ export class ProductionService extends AbstractService<Production> {
     return result as any;
   }*/
 
-  async createRecord(dto: CreateProductionDto): Promise<Production> {
-    const result = await super.createRecord({ ...dto });
-    if (!result) return result as any;
-
-    const handleBundleProducts = async (productionProductData, products) => {
-      for (const itemProduct of products) {
-        const itemProductData = {
-          ...itemProduct,
-          bundleId: itemProduct.bundleId,
-          quantity: productionProductData.quantity * itemProduct.quantity,
-          destinationBranchId: result.destinationBranchId,
-        };
-
-        if (await this.productService.isBundle(itemProduct.bundleId)) {
-          const ciDetails2 = await this.productService.getDetails(
-            itemProduct.bundleId,
-          );
-          const headCiDetails2 = {
-            ...productionProductData,
-            productId: ciDetails2.id,
-            destinationBranchId: result.destinationBranchId,
-            productionId: result.id,
-            type: result.type,
-          };
-          await this.updateStocks(headCiDetails2);
-          await handleBundleProducts(
-            productionProductData,
-            ciDetails2.bundleToProducts,
-          );
-        } else {
-          await this.addAndReduceStocks(
-            productionProductData.type,
-            itemProductData,
-          );
-        }
-      }
-    };
-
-    for (const productionToProduct of dto.productionToProducts) {
-      const productionProductData = {
-        ...productionToProduct,
-        destinationBranchId: result.destinationBranchId,
-        productionId: result.id,
-        type: result.type,
-      };
-      await this.updateStocks(productionProductData);
-
-      const ciDetails = await this.productService.getDetails(
-        productionProductData.productId,
+  async createRecord(dto: CreateProductionDto): Promise<any> {
+    const aggregated =
+      await this.productService.aggregatedFlattenedProductForProduction(
+        dto.productionToProducts as any,
       );
-      if (ciDetails) {
-        await handleBundleProducts(
+    if (dto.type == ProductionStatusEnum.production) {
+      //verification du child stock
+      await this.checkChildStock(aggregated, dto.destinationBranchId, dto.type);
+    } else {
+      for (const productionToProduct of dto.productionToProducts) {
+        const productDetails = await this.productService.getDetails(
+          productionToProduct.productId,
+        );
+        const productionProductData = {
+          ...productionToProduct,
+          destinationBranchId: dto.destinationBranchId,
+          quantity: productionToProduct.quantity,
+        };
+        await this.checkStockBeforeProduction(
+          productDetails,
           productionProductData,
-          ciDetails.bundleToProducts,
+          ProductionStatusEnum.disassembly,
         );
       }
     }
 
-    return result as any;
+    //verification du stock
+
+    return await this.runInTransactionService.runInTransaction(
+      async (manager) => {
+        const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
+        const _productionToProducts: any = dto.productionToProducts.map(
+          (p) =>
+            (p.quantity =
+              dto.type == ProductionStatusEnum.production
+                ? p.quantity
+                : -p.quantity),
+        );
+        const production = await manager.save(Production, {
+          ...dto,
+          productionToProducts: _productionToProducts,
+          createdById: authUser.id,
+          createdAt: new Date(),
+        });
+
+        for (const productionToProduct of dto.productionToProducts) {
+          const productionProductData = {
+            ...productionToProduct,
+            destinationBranchId: production.destinationBranchId,
+            productionId: production.id,
+            type: production.type,
+          };
+          await this.updateStocks(productionProductData, manager);
+        }
+
+        await this.reduceAndAddChildStock(
+          aggregated,
+          dto.destinationBranchId,
+          production.type,
+          manager,
+        );
+
+        /*await this.applyStockUpdate(stockAdjustment, manager);
+      const mstockAdjustment = this.setStockMouvementParameters(
+        stockAdjustment,
+        reason,
+      );*/
+
+        for (const [sku, data] of aggregated.entries()) {
+          const productByBranchDetail =
+            await this.productService.getByBranchSKU(data.productId, {
+              sku,
+              destinationBranchId: dto.destinationBranchId,
+            });
+          const type =
+            dto.type == StockMovementSourceEnum.production
+              ? StockMovementTypeEnum.output
+              : StockMovementTypeEnum.input;
+          const source =
+            dto.type == StockMovementSourceEnum.production
+              ? StockMovementSourceEnum.production
+              : StockMovementSourceEnum.disassembly;
+
+          const reason =
+            dto.type == StockMovementSourceEnum.production
+              ? ReasonTypeEnum.production
+              : ReasonTypeEnum.disassembly;
+
+          await this.updateStockMovements(
+            {
+              ...data,
+              quantity:
+                dto.type == StockMovementSourceEnum.production
+                  ? -data.quantity
+                  : data.quantity,
+              destinationBranchId: dto.destinationBranchId,
+              reference: production.reference,
+              source: source,
+              sourceId: production.id,
+              createdById: authUser?.id,
+              sku: sku,
+              reason: reason,
+              cost: productByBranchDetail.price,
+              availableStock: productByBranchDetail.inStock,
+              type: type,
+            },
+            manager,
+          );
+        }
+        return production as any;
+      },
+    );
+  }
+
+  async updateStockMovements(productData: any, manager?: any): Promise<void> {
+    if (manager) {
+      await manager.getRepository(this.stockMovementService.entity).save({
+        productId: productData.productId,
+        quantity: productData.quantity,
+        type: productData.type,
+        source: productData.source,
+        branchId: productData.destinationBranchId,
+        sku: productData.sku,
+        reference: productData.reference,
+        sourceId: productData.sourceId,
+        cost: productData.cost,
+        reason: productData.reason,
+        isManual: true,
+        totalCost: productData.quantity * productData.cost,
+        createdById: productData.createdById,
+        availableStock: productData.availableStock,
+      });
+    } else {
+      // Journaliser le mouvement
+      await this.stockMovementService.createRecord({
+        productId: productData.productId,
+        quantity: productData.quantity,
+        type: productData.type,
+        source: productData.sources,
+        branchId: productData.destinationBranchId,
+        sku: productData.sku,
+        reference: productData.reference,
+        sourceId: productData.sourceId,
+        cost: productData.cost,
+        reason: productData.reason,
+        isManual: true,
+        totalCost: productData.quantity * productData.cost,
+        //createdById: productData.createdById,
+        availableStock: productData.availableStock,
+      });
+    }
+  }
+
+  async reduceAndAddChildStock(
+    aggregated: any,
+    branchId: any,
+    type: any,
+    manager?: any,
+  ) {
+    //mise a jour du stock
+    for (const [sku, data] of aggregated.entries()) {
+      const productDetails = await this.productService.getDetails(
+        data.productId,
+      );
+      await this.myUpdateStocks(
+        { ...productDetails, sku: sku },
+        {
+          ...data,
+          quantity:
+            type == ProductionStatusEnum.production
+              ? data.quantity
+              : -data.quantity,
+          sku: sku,
+          destinationBranchId: branchId,
+        },
+        manager,
+      );
+    }
   }
 
   async updateRecord(
@@ -215,6 +344,129 @@ export class ProductionService extends AbstractService<Production> {
     });
 
     return result;
+  }
+
+  async myUpdateStocks(product, dto: any, manager?: any): Promise<void> {
+    /* const sellingData = await this.getDetailBySellingId(dto.sellingId);
+    if (sellingData && sellingData.sellingToProducts) {
+      await this.updateProductCost(sellingData.sellingToProducts, dto, manager);
+    }*/
+
+    //update product stock
+    if (product.hasVariant) {
+      await this.updateVariantReduceStock(
+        product.variantToProducts,
+        dto,
+        manager,
+      );
+    } else {
+      await this.updateProductReduceStock(
+        product.branchToProducts,
+        dto,
+        manager,
+      );
+    }
+  }
+
+  private async updateVariantReduceStock(
+    variants: any[],
+    dto: any,
+    manager?: any,
+  ): Promise<void> {
+    const vp = variants.find((el: { sku: any }) => el.sku === dto.sku);
+
+    if (!vp) return;
+
+    const srcProductBranch = vp.branchVariantToProducts.find(
+      (el: { branchId: any; sku: any }) =>
+        el.branchId === dto.destinationBranchId && el.sku === vp.sku,
+    );
+
+    if (srcProductBranch) {
+      if (manager) {
+        await manager
+          .getRepository(this.branchVariantToProductService.entity)
+          .update(
+            { sku: srcProductBranch.sku, branchId: dto.destinationBranchId },
+            { inStock: srcProductBranch.inStock - dto.quantity },
+          );
+      } else {
+        await this.branchVariantToProductService.updateRecord(
+          { sku: srcProductBranch.sku, branchId: dto.destinationBranchId },
+          { inStock: srcProductBranch.inStock - dto.quantity },
+        );
+      }
+    }
+  }
+
+  private async updateProductReduceStock(
+    branchToProducts: any[], // Assurez-vous que c'est bien un tableau
+    dto: any,
+    manager?: any,
+  ): Promise<void> {
+    //let _currentBranchStock: any;
+    try {
+      if (!Array.isArray(branchToProducts) || branchToProducts.length === 0) {
+        throw new BadRequestException([
+          `Données invalides : surcusale non défini ou pas activé`,
+        ]);
+      }
+
+      if (!dto?.productId || !dto?.destinationBranchId || !dto?.quantity) {
+        throw new BadRequestException([
+          `Données invalides : Vérifiez productId, destinationBranchId et quantity`,
+        ]);
+      }
+
+      const currentBranchStock =
+        branchToProducts &&
+        branchToProducts.find(
+          (el: { productId: any; branchId: any }) =>
+            el.productId === dto.productId &&
+            el.branchId === dto.destinationBranchId,
+        );
+      //_currentBranchStock = currentBranchStock.inStock;
+      if (!currentBranchStock) {
+        throw new BadRequestException([
+          `Stock introuvable pour le produit ${dto.productId} à la branche ${dto.destinationBranchId}`,
+        ]);
+      }
+
+      console.log(
+        `📦 Mise à jour du stock pour produit ${dto.productId} à la branche ${dto.destinationBranchId}`,
+      );
+      // 🔁 Utilise manager si dispo
+
+      if (manager) {
+        await manager.getRepository(this.branchToProductService.entity).update(
+          {
+            productId: dto.productId,
+            branchId: dto.destinationBranchId,
+          },
+          { inStock: currentBranchStock.inStock - dto.quantity },
+        );
+      } else {
+        // Mise à jour du stock
+        await this.branchToProductService.updateRecord(
+          {
+            productId: dto.productId,
+            branchId: dto.destinationBranchId,
+          },
+          { inStock: currentBranchStock.inStock - dto.quantity },
+        );
+      }
+      console.log(
+        `✅ Stock mis à jour avec succès : Nouveau stock = ${currentBranchStock.inStock - dto.quantity}`,
+      );
+    } catch (error) {
+      //console.log('reeerr', currentBranchStock);
+      console.error(`❌ Erreur dans updateProductStock :`, error);
+      throw new BadRequestException(error);
+      /*throw new BadRequestException([
+        //`Erreur lors de la mise à jour du stock :  ${error.message} `,
+        `📦 Stock insuffisant pour le produit "${dto.product.displayName}" (SKU: ${dto.product.sku}) Stock actuel: ${_currentBranchStock} | 📥 QQuantité demandée: ${dto.quantity}.`,
+      ]);*/
+    }
   }
 
   /* async getFilterByAuthUserBranch(): Promise<
@@ -313,7 +565,7 @@ export class ProductionService extends AbstractService<Production> {
     return result;
   }
 
-  async updateStocks(productionProductData: any): Promise<void> {
+  async updateStocks(productionProductData: any, manager?: any): Promise<void> {
     const prd = await this.productService.getDetails(
       productionProductData.productId,
     );
@@ -326,7 +578,7 @@ export class ProductionService extends AbstractService<Production> {
       0;
     }
     if (productionProductData.type == ProductionStatusEnum.disassembly) {
-      await this.updateProductReduceStock(
+      await this.updateProductStock(
         prd.branchToProducts,
         productionProductData,
       );
@@ -338,7 +590,7 @@ export class ProductionService extends AbstractService<Production> {
       productionProductData.bundleId,
     );
     if (prd.trackStock) {
-      await this.updateProductStock(prd.branchToProducts, {
+      await this.updateProductReduceStock(prd.branchToProducts, {
         ...productionProductData,
         productId: prd.id,
       });
@@ -388,7 +640,7 @@ export class ProductionService extends AbstractService<Production> {
       await this.updateComposedItemAddStocks(ItemProductData);
     }
   }
-  private async updateProductReduceStock(
+  /*private async updateProductReduceStock(
     branchToProducts: any,
     dto: any,
   ): Promise<void> {
@@ -405,7 +657,7 @@ export class ProductionService extends AbstractService<Production> {
       },
       { inStock: currentBranchStock.inStock - dto.quantity },
     );
-  }
+  }*/
 
   totalQuantities(entity: { productionToProducts: any[] }) {
     if (!entity?.productionToProducts) {
@@ -415,5 +667,97 @@ export class ProductionService extends AbstractService<Production> {
       (acc: any, current: { quantity: any }) => acc + (current.quantity || 0),
       0,
     );
+  }
+
+  private async checkStockBeforeProduction(
+    product: any,
+    deliveryProductData: any,
+    type: ProductionStatusEnum,
+  ): Promise<any> {
+    //try {
+    // 🔹 Vérification des entrées
+    if (!product || !product.displayName || !product.sku) {
+      throw new BadRequestException(
+        'Données du produit invalides ou incomplètes.',
+      );
+    }
+
+    if (
+      !deliveryProductData?.destinationBranchId ||
+      deliveryProductData?.quantity == null
+    ) {
+      throw new BadRequestException(
+        'Données de livraison invalides ou incomplètes.',
+      );
+    }
+    // 🔹 Récupération du stock actuel
+    const currentBranchStock = this.productService.getBranchStock(
+      product,
+      deliveryProductData,
+    );
+
+    if (currentBranchStock == null) {
+      throw new BadRequestException(
+        `Impossible de récupérer le stock du produit "${product.displayName}" (SKU: ${product.sku}).`,
+      );
+    }
+
+    console.log(
+      `🛑 Vérification du stock pour ${product.displayName} (SKU: ${product.sku})`,
+    );
+    console.log(
+      `📦 Stock actuel: ${currentBranchStock} | 📥 Quantité demandée: ${deliveryProductData.quantity}`,
+    );
+
+    if (type == ProductionStatusEnum.production) {
+      // 🔹 Vérification de la disponibilité du stock
+      if (currentBranchStock < deliveryProductData.quantity) {
+        throw new BadRequestException(
+          [
+            `📦 Stocks insuffisant pour le produit "${product.displayName}" (SKU: ${product.sku}) Stock actuel: ${currentBranchStock} | 📥 Quantité demandée: ${deliveryProductData.quantity}.`,
+          ],
+          /*{
+              stockActuel: currentBranchStock,
+              quantiteDemandee: deliveryProductData.quantity,
+              analyse: this.analyzeStockIssue(product, currentBranchStock),
+            },*/
+        );
+      }
+    } else {
+      if (!(await this.productService.isBundle(product.id))) {
+        throw new BadRequestException(['Ce produit n’est pas un bundle']);
+      }
+      // 🔹 Vérification de la disponibilité du stock pour le bundle
+      if (deliveryProductData.quantity > currentBranchStock) {
+        throw new BadRequestException([
+          `📦 Stocks insuffisant pour le produit "${product.displayName}" (SKU: ${product.sku}) Stock actuel: ${currentBranchStock} | 📥 Quantité à desassembler: ${deliveryProductData.quantity}.`,
+        ]);
+      }
+    }
+
+    console.log(
+      `✅ Stock suffisant pour ${product.displayName} (SKU: ${product.sku})`,
+    );
+  }
+
+  private async checkChildStock(
+    aggregated: any,
+    destinationBranchId: any,
+    type: ProductionStatusEnum,
+  ) {
+    for (const [sku, data] of aggregated && aggregated.entries()) {
+      const productDetails = await this.productService.getDetails(
+        data.productId,
+      );
+      await this.checkStockBeforeProduction(
+        { ...productDetails, sku: sku },
+        {
+          destinationBranchId: destinationBranchId,
+          quantity: data.quantity,
+          sku: sku,
+        },
+        type,
+      );
+    }
   }
 }

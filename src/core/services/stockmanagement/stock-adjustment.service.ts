@@ -60,14 +60,15 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
     this.calculateAfterQuantities(dto, reason);
     await this.runInTransactionService.runInTransaction(async (manager) => {
       const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
-      const stockAdjustment = await manager.save(StockAdjustment, {
+      const stockAdjustment: any = await manager.save(StockAdjustment, {
         ...dto,
         createdById: authUser.id,
         createdAt: new Date(),
       });
 
       await this.applyStockUpdate(stockAdjustment, manager);
-      const mstockAdjustment = this.setStockMouvementParameters(
+
+      const mstockAdjustment = await this.setStockMouvementParameters(
         stockAdjustment,
         reason,
       );
@@ -165,83 +166,83 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
     }
   }
 
-  private setStockMouvementParameters(
+  private async setStockMouvementParameters(
     stockAdjustment: any,
     reasons: any,
-  ): any[] {
+  ): Promise<any[]> {
     const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
-    const adjustedMovements = stockAdjustment.productToStockAdjustments.map(
-      (eel) => {
-        const el = {
-          ...eel,
-          source: '',
-          reason: '',
-          type: '',
-          destinationBranchId: '',
-          reference: '',
-          sourceId: '',
-          createdById: '',
-        };
-        const reason = reasons?.name;
-
-        switch (reason) {
-          case DefaultReasonTypeEnum.loss:
-            el.quantity = -Math.abs(el.quantity);
-            el.source = StockMovementSourceEnum.stockAdjustement;
-            el.reason = ReasonTypeEnum.ajustementLoss;
-            el.type = StockMovementTypeEnum.output;
-            el.destinationBranchId = stockAdjustment.branchId;
-            el.reference = stockAdjustment.reference;
-            el.sourceId = stockAdjustment.id;
-            el.createdById = authUser?.id;
-            break;
-            break;
-
-          case DefaultReasonTypeEnum.damage:
-            el.quantity = -Math.abs(el.quantity);
-            el.source = StockMovementSourceEnum.stockAdjustement;
-            el.reason = ReasonTypeEnum.ajustementDamage;
-            el.type = StockMovementTypeEnum.output;
-            el.destinationBranchId = stockAdjustment.branchId;
-            el.reference = stockAdjustment.reference;
-            el.sourceId = stockAdjustment.id;
-            el.createdById = authUser?.id;
-            break;
-
-          case DefaultReasonTypeEnum.receiveItem:
-            el.quantity = Math.abs(el.quantity);
-            el.source = StockMovementSourceEnum.stockAdjustement;
-            el.reason = ReasonTypeEnum.ajustementReceiveItem;
-            el.type = StockMovementTypeEnum.input;
-            el.destinationBranchId = stockAdjustment.branchId;
-            el.reference = stockAdjustment.reference;
-            el.sourceId = stockAdjustment.id;
-            el.createdById = authUser?.id;
-            break;
-            break;
-
-          case DefaultReasonTypeEnum.inventoryCount:
-            el.quantity = Math.abs(el.quantity) - Math.abs(el.inStock);
-            el.type =
-              el.inStock > el.quantity
-                ? StockMovementTypeEnum.output
-                : StockMovementTypeEnum.input;
-            el.source = StockMovementSourceEnum.stockAdjustement;
-            el.reason = ReasonTypeEnum.ajustementInventoryCount;
-            el.destinationBranchId = stockAdjustment.branchId;
-            el.reference = stockAdjustment.reference;
-            el.sourceId = stockAdjustment.id;
-            el.createdById = authUser?.id;
-            break;
-
-          default:
-            // Si aucun type ne matche, tu peux log ou lever une erreur si nécessaire
-            break;
-        }
-
-        return el;
-      },
+    const productToStockAdjustments = stockAdjustment.productToStockAdjustments;
+    const filterOnlySimpleProducts = await this.filterOnlySimpleProducts(
+      productToStockAdjustments,
     );
+    const adjustedMovements = filterOnlySimpleProducts.map((eel) => {
+      const el = {
+        ...eel,
+        source: '',
+        reason: '',
+        type: '',
+        destinationBranchId: '',
+        reference: '',
+        sourceId: '',
+        createdById: '',
+      };
+      const reason = reasons?.name;
+
+      switch (reason) {
+        case DefaultReasonTypeEnum.loss:
+          el.quantity = -Math.abs(el.quantity);
+          el.source = StockMovementSourceEnum.stockAdjustement;
+          el.reason = ReasonTypeEnum.ajustementLoss;
+          el.type = StockMovementTypeEnum.output;
+          el.destinationBranchId = stockAdjustment.branchId;
+          el.reference = stockAdjustment.reference;
+          el.sourceId = stockAdjustment.id;
+          el.createdById = authUser?.id;
+          break;
+
+        case DefaultReasonTypeEnum.damage:
+          el.quantity = -Math.abs(el.quantity);
+          el.source = StockMovementSourceEnum.stockAdjustement;
+          el.reason = ReasonTypeEnum.ajustementDamage;
+          el.type = StockMovementTypeEnum.output;
+          el.destinationBranchId = stockAdjustment.branchId;
+          el.reference = stockAdjustment.reference;
+          el.sourceId = stockAdjustment.id;
+          el.createdById = authUser?.id;
+          break;
+
+        case DefaultReasonTypeEnum.receiveItem:
+          el.quantity = Math.abs(el.quantity);
+          el.source = StockMovementSourceEnum.stockAdjustement;
+          el.reason = ReasonTypeEnum.ajustementReceiveItem;
+          el.type = StockMovementTypeEnum.input;
+          el.destinationBranchId = stockAdjustment.branchId;
+          el.reference = stockAdjustment.reference;
+          el.sourceId = stockAdjustment.id;
+          el.createdById = authUser?.id;
+          break;
+
+        case DefaultReasonTypeEnum.inventoryCount:
+          el.quantity = Math.abs(el.quantity) - Math.abs(el.inStock);
+          el.type =
+            el.inStock > el.quantity
+              ? StockMovementTypeEnum.output
+              : StockMovementTypeEnum.input;
+          el.source = StockMovementSourceEnum.stockAdjustement;
+          el.reason = ReasonTypeEnum.ajustementInventoryCount;
+          el.destinationBranchId = stockAdjustment.branchId;
+          el.reference = stockAdjustment.reference;
+          el.sourceId = stockAdjustment.id;
+          el.createdById = authUser?.id;
+          break;
+
+        default:
+          // Si aucun type ne matche, tu peux log ou lever une erreur si nécessaire
+          break;
+      }
+
+      return el;
+    });
 
     return adjustedMovements;
   }
@@ -321,6 +322,21 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
     }
   }
 
+  async filterOnlySimpleProducts(
+    adjustments: { productId: string }[],
+  ): Promise<any[]> {
+    const result = [];
+
+    for (const item of adjustments) {
+      const isBundle = await this.productService.isBundle(item.productId);
+      if (!isBundle) {
+        result.push(item);
+      }
+    }
+
+    return result;
+  }
+
   private async applyStockUpdate(dto: any, manager?: any) {
     for (const ps of dto.productToStockAdjustments) {
       const prd = await this.productService.getDetails(ps.productId);
@@ -345,7 +361,6 @@ export class StockAdjustmentService extends AbstractService<StockAdjustment> {
           destinationBranchId: el.destinationBranchId,
         },
       );
-      console.log('dfdfdf',el, productByBranchDetail);
       await this.updateStockMovements(
         { ...el, availableStock: productByBranchDetail.inStock },
         manager,

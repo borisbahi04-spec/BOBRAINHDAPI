@@ -56,7 +56,7 @@ export class ProductionController {
         textFilterFields: ['reference'],
       },
     );
-
+    console.log('ghhghghg', options);
     return this.service.readPaginatedListRecord(options);
   }
 
@@ -90,7 +90,6 @@ export class ProductionController {
     @Query() query?: any,
   ): Promise<Production> {
     const production = await this.service.createRecord(dto);
-
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,
@@ -112,10 +111,7 @@ export class ProductionController {
     @Body() dto: UpdateProductionDto,
     @Query() query?: any,
   ): Promise<Production> {
-    const production = await this.service.updateRecord(
-      { id: id ?? '' },
-      dto,
-    );
+    const production = await this.service.updateRecord({ id: id ?? '' }, dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
