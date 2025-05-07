@@ -33,7 +33,7 @@ import { TaxToProduct } from './tax-to-product.entity';
 import { DiscountToProduct } from './discount-to-product.entity';
 import { ProductToTax } from '../setting/product-to-tax.entity';
 import { ProductToStockAdjustment } from '../stockmanagement/product-to-stockadjustment.entity';
-import { ProductToInventoryCount } from '../stockmanagement/product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from '../stockmanagement/product-to-inventorycount.entity';
 import { HistoryToInventoryCount } from '../stockmanagement/history-to-inventorycount.entity';
 import { ProductToTransfertOrder } from '../stockmanagement/product-to-transfertorder.entity';
 import { ProductionToProduct } from '../stockmanagement/production-to-product.entity';

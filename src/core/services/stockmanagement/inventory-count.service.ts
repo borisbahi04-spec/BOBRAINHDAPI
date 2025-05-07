@@ -33,7 +33,7 @@ import { ProductService } from '../product/product.service';
 import { UpdateInventoryCountSaveDto } from 'src/core/dto/stockmanagement/update-inventory-count-save.dto';
 import { RunInTransactionService } from '../transaction/runInTransaction.service';
 import { StockMovementService } from '../stockMovement/stockMovement.service';
-import { ProductToInventoryCount } from 'src/core/entities/stockmanagement/product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from 'src/core/entities/stockmanagement/product-to-inventorycount.entity';
 
 @Injectable()
 export class InventoryCountService extends AbstractService<InventoryCount> {

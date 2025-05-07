@@ -99,7 +99,7 @@ import { StockAdjustmentService } from './services/stockmanagement/stock-adjustm
 import { StockAdjustmentSubscriber } from './entities/stockmanagement/stockadjustment.subscriber';
 import { BranchVariantToProductService } from './services/subsidiary/branch-variant-to-product.service';
 import { InventoryCount } from './entities/stockmanagement/inventorycount.entity';
-import { ProductToInventoryCount } from './entities/stockmanagement/product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from './entities/stockmanagement/product-to-inventorycount.entity';
 import { InventoryCountSubscriber } from './entities/stockmanagement/Inventorycount.subscriber';
 import { InventoryCountService } from './services/stockmanagement/inventory-count.service';
 import { InventoryCountController } from './controllers/stockmanagement/inventory-count.controller';

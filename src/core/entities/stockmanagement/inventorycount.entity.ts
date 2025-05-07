@@ -1,6 +1,5 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -23,9 +22,8 @@ import {
   InventoryCountStatusEnum,
   InventoryCountTypeEnum,
 } from 'src/core/definitions/enums';
-import { ProductToInventoryCount } from './product-to-inventoryCount.entity';
 import { HistoryToInventoryCount } from './history-to-inventorycount.entity';
-//import { ProductToInventoryCount } from './product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from './product-to-inventoryCount.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
