@@ -104,6 +104,7 @@ export class Production extends CoreEntity {
     },
   )
   productionToProducts: ProductionToProduct[];
+  totalQuantities: number;
 
   /**
    * Getters & Setters *******************************************

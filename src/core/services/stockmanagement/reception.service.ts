@@ -543,7 +543,7 @@ export class ReceptionService extends AbstractService<Reception> {
     for (const receptionToProduct of reception.receptionToProducts) {
       const receptionProductData = {
         ...receptionToProduct,
-        destinationBranchId: reception.branchId,
+        destinationBranchId: reception.destinationBranchId,
         sellingId: reception.sellingId,
       };
       await this.updateStocks(receptionProductData, manager);
@@ -563,7 +563,7 @@ export class ReceptionService extends AbstractService<Reception> {
       );
       const receptionProductData = {
         ...receptionToProduct,
-        destinationBranchId: reception.branchId,
+        destinationBranchId: reception.destinationBranchId,
         reference: reception.reference,
         sourceId: reception.id,
         createdById: authUser?.id,

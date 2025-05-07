@@ -30,6 +30,11 @@ import { Production } from 'src/core/entities/stockmanagement/production.entity'
 import { CreateProductionDto } from 'src/core/dto/stockmanagement/create-production.dto';
 import { UpdateProductionDto } from 'src/core/dto/stockmanagement/update-production.dto';
 import { ProductionService } from 'src/core/services/stockmanagement/production.service';
+import {
+  AbilityActionEnum,
+  AbilitySubjectEnum,
+} from 'src/core/definitions/enums';
+import { merge } from 'lodash';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
@@ -49,6 +54,11 @@ export class ProductionController {
     @CurrentUser() authUser: AuthUser,
     @Query() query?: any,
   ): Promise<Paginated<Production>> {
+    // Permission check
+    await authUser?.throwUnlessCan(
+      AbilityActionEnum.read,
+      AbilitySubjectEnum.Production,
+    );
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchParamOptions,
@@ -56,8 +66,12 @@ export class ProductionController {
         textFilterFields: ['reference'],
       },
     );
-    console.log('ghhghghg', options);
-    return this.service.readPaginatedListRecord(options);
+    // Apply auth user branch filter
+    options.where = merge(
+      options?.where,
+      await this.service.getFilterByAuthUserBranch(),
+    );
+    return await this.service.myreadPaginatedListRecord(options);
   }
 
   /**
@@ -89,6 +103,7 @@ export class ProductionController {
     @Body() dto: CreateProductionDto,
     @Query() query?: any,
   ): Promise<Production> {
+    console.log('dsdsdsds',dto)
     const production = await this.service.createRecord(dto);
     const options = buildFilterFromApiSearchParams(
       this.service.repository,

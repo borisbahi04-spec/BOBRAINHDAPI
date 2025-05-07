@@ -62,6 +62,19 @@ export class Delivery extends CoreEntity {
   })
   status: SellingStatusEnum;
 
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'destination_branch_id', type: 'uuid', nullable: false })
+  destinationBranchId: string;
+  @ApiProperty({ required: false, type: () => Branch })
+  @ManyToOne(() => Branch, (destinationbranch) => destinationbranch.deliverys, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn({ name: 'destination_branch_id' })
+  destinationBranch: Branch;
+
   @ApiPropertyOptional()
   @Column({
     name: 'canceled_by_id',

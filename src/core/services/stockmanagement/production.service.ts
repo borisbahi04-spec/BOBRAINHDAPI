@@ -49,32 +49,35 @@ export class ProductionService extends AbstractService<Production> {
     return this._repository;
   }
 
-  async readPaginatedListRecord(
-    options?: FindManyOptions<Production>,
-    page: number = 1,
-    perPage: number = 25,
+  async myreadPaginatedListRecord(
+    options?: FindManyOptions<any>,
+    page?: number,
+    perPage?: number,
   ) {
     // Paginate using provided options, page, and perPage
-    const response = await this.paginatedService.paginate(
-      this.repository,
-      page,
-      perPage,
-      options,
-    );
+    const productions = await this.readPaginatedListRecord(options);
 
+    productions.data.map(async (record) => {
+      return (record.totalQuantities =
+        record?.productionToProducts &&
+        record?.productionToProducts.reduce(
+          (acc, item) => acc + item.quantity,
+          0,
+        ));
+    });
     // Retrieve detailed records for each item in the paginated response
-    const detailedRecords = await Promise.all(
+    /* const detailedRecords = await Promise.all(
       response.data.map(async (record) => {
         return this.readOneRecord({
           ...options,
           where: { ...options?.where, id: record.id },
         });
       }),
-    );
+    );*/
     // Update response data with detailed records
-    response.data = detailedRecords;
+    //response.data = detailedRecords;
     // Update response data with processed items and return
-    return response;
+    return productions as any;
   }
 
   /*async createRecord(dto: CreateProductionDto): Promise<Production> {
@@ -186,20 +189,20 @@ export class ProductionService extends AbstractService<Production> {
     return await this.runInTransactionService.runInTransaction(
       async (manager) => {
         const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
-        const _productionToProducts: any = dto.productionToProducts.map(
+
+        const production = await manager.save(Production, {
+          ...dto,
+          createdById: authUser.id,
+          createdAt: new Date(),
+        });
+        //Gerer selon quil soit production ou desassemblage
+        dto.productionToProducts.map(
           (p) =>
             (p.quantity =
               dto.type == ProductionStatusEnum.production
                 ? p.quantity
                 : -p.quantity),
         );
-        const production = await manager.save(Production, {
-          ...dto,
-          productionToProducts: _productionToProducts,
-          createdById: authUser.id,
-          createdAt: new Date(),
-        });
-
         for (const productionToProduct of dto.productionToProducts) {
           const productionProductData = {
             ...productionToProduct,
@@ -268,7 +271,16 @@ export class ProductionService extends AbstractService<Production> {
       },
     );
   }
+  async getFilterByAuthUserBranch(): Promise<FindOptionsWhere<Production>> {
+    const authUser = await super.checkSessionBranch();
+    if (!(await authUser.can('manage', 'all'))) {
+      return {
+        branchId: authUser.targetBranchId,
+      };
+    }
 
+    return {};
+  }
   async updateStockMovements(productData: any, manager?: any): Promise<void> {
     if (manager) {
       await manager.getRepository(this.stockMovementService.entity).save({
@@ -468,21 +480,6 @@ export class ProductionService extends AbstractService<Production> {
       ]);*/
     }
   }
-
-  /* async getFilterByAuthUserBranch(): Promise<
-    FindOptionsWhere<Production>
-  > {
-    const authUser = await super.checkSessionBranch();
-    if (!(await authUser.can('manage', 'all'))) {
-      return {
-        branchToProductions: {
-          branchId: authUser.targetBranchId,
-        },
-      };
-    }
-
-    return {};
-  }*/
 
   /*async readPaginatedListRecordForComposite(
     options?: FindManyOptions<any>,

@@ -165,24 +165,6 @@ export class DeliveryService extends AbstractService<Delivery> {
     dto: any,
     manager?: any,
   ): Promise<void> {
-    //let aggregated = new Map<string, { productId: string; quantity: number }>();
-    /*for (const item of cartItems) {
-      const { productId, sku, quantity } = item;
-      const flattened = await this.productService.flattenProductStructure(
-        productId,
-        sku,
-        quantity,
-      );
-
-      for (const [sku, data] of flattened.entries()) {
-        const aggg = aggregated.get(sku);
-        const current = aggg?.quantity || 0;
-        aggregated.set(sku, {
-          productId: data.productId,
-          quantity: current + data.quantity,
-        });
-      }
-    }*/
     const aggregated =
       await this.productService.aggregatedFlattenedProduct(cartItems);
     // 🔹 Vérifier le stock du produit aggrege
@@ -195,7 +177,7 @@ export class DeliveryService extends AbstractService<Delivery> {
       await this.checkStockBeforeDelivery(
         { ...productDetails, sku: sku },
         {
-          destinationBranchId: dto.branchId,
+          destinationBranchId: dto.destinationBranchId,
           quantity: data.quantity,
           sku: sku,
         },
@@ -212,7 +194,7 @@ export class DeliveryService extends AbstractService<Delivery> {
         {
           ...data,
           sku: sku,
-          destinationBranchId: dto.branchId,
+          destinationBranchId: dto.destinationBranchId,
         },
         manager,
       );
@@ -227,7 +209,7 @@ export class DeliveryService extends AbstractService<Delivery> {
         data.productId,
         {
           sku,
-          destinationBranchId: dto.branchId,
+          destinationBranchId: dto.destinationBranchId,
         },
       );
       // ✅ Vérifie si c’est un bundle ET qu’il n’est pas destiné à la production
@@ -244,7 +226,7 @@ export class DeliveryService extends AbstractService<Delivery> {
       await this.updateStockMovements(
         {
           ...data,
-          destinationBranchId: dto.branchId,
+          destinationBranchId: dto.destinationBranchId,
           reference: dto.reference,
           sourceId: dto.id,
           createdById: authUser?.id,

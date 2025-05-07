@@ -36,6 +36,7 @@ export class DeliveryTransportDto extends PartialType(
 export class CreateDeliveryDto extends PickType(Delivery, [
   'reference',
   //'transporterId',
+  //'destinationBranchId',
   'description',
 ] as const) {
   @IsOptional()

@@ -61,7 +61,7 @@ export class StockMovementController {
       this.service.repository,
       query as ApiSearchParamOptions,
       {
-        textFilterFields: ['displayName'],
+        textFilterFields: ['reference'],
       },
     );
 
