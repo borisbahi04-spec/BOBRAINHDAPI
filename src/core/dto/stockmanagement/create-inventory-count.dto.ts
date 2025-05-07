@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { InventoryCount } from 'src/core/entities/stockmanagement/inventorycount.entity';
-import { ProductToInventoryCount } from 'src/core/entities/stockmanagement/product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from 'src/core/entities/stockmanagement/product-to-inventorycount.entity';
 import { InventoryCountTypeEnum } from 'src/core/definitions/enums';
 import { HistoryToInventoryCount } from 'src/core/entities/stockmanagement/history-to-inventorycount.entity';
 

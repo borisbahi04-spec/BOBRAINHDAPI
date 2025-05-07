@@ -23,7 +23,7 @@ import {
   InventoryCountTypeEnum,
 } from 'src/core/definitions/enums';
 import { HistoryToInventoryCount } from './history-to-inventorycount.entity';
-import { ProductToInventoryCount } from './product-to-inventoryCount.entity';
+import { ProductToInventoryCount } from './product-to-inventorycount.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
