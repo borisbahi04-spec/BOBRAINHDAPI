@@ -27,7 +27,7 @@ export class Access extends CoreEntity {
     description: `Entite pour la gestion des permission`,
     uniqueItems: true,
   })
-  @Index()
+  //@Index()
   @Column({ type: 'simple-json', nullable: false })
   entity: EntityType;
 
