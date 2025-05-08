@@ -28,7 +28,6 @@ export class Access extends CoreEntity {
     uniqueItems: true,
   })
   @Index()
-  @Column()
   @Column({ type: 'simple-json', nullable: false })
   entity: EntityType;
 
