@@ -35,6 +35,7 @@ export class DefaultDataService {
     const branches = await this.createBranchesDefaultData();
     const acccess = await this.createAccessDefaultData();
     const roles = await this.createRolesDefaultData();
+    console.log('kjkjkjk', roles);
     const users = await this.createUsersDefaultData();
     const reasons = await this.createReasonsDefaultData();
     const equipmentTypes = await this.createEquipmentTypesDefaultData();
@@ -219,8 +220,9 @@ export class DefaultDataService {
     const ownerAccess = await Access.findBy({ name: AccessTypeEnum.owner });
     const managerAccess = await Access.findBy({ name: AccessTypeEnum.manager });
     const sellerAccess = await Access.findBy({ name: AccessTypeEnum.seller });
+    console.log('titi', defaultRoles);
 
-    if (ownerAccess.length <= 0) {
+    /*if (ownerAccess.length <= 0) {
       return [];
     }
     if (managerAccess.length <= 0) {
@@ -228,7 +230,7 @@ export class DefaultDataService {
     }
     if (sellerAccess.length <= 0) {
       return [];
-    }
+    }*/
     for (const dto of defaultRoles) {
       let modifiedDto: any;
       /*if (dto.name == AccessTypeEnum.owner) {
@@ -272,18 +274,17 @@ export class DefaultDataService {
           };
         }
       }*/
-      if (dto.name == 'admin') {
+      /*if (dto.name == 'admin') {
         modifiedDto = dto;
-      }
-
-      console.log('zezazazz', modifiedDto);
+      }*/
 
       exists = await Role.countBy({ name: dto.name });
+      console.log('azzeeeee2000', exists);
+
       if (exists <= 0) {
-        roles.push(await Role.save(modifiedDto as Role));
+        roles.push(await Role.save(dto as any));
       }
     }
-
     return roles;
   }
 
@@ -292,15 +293,20 @@ export class DefaultDataService {
     let exists: number;
     const branches = await Branch.findBy({});
     const roles = await Role.findBy({ name: AccessTypeEnum.owner });
+
     const users: User[] = await User.findBy({});
+    console.log('logggedUser2222', users);
     if (users.length > 0 || branches.length <= 0 || roles.length <= 0) {
       return [];
     }
     let user: User;
     for (const dto of defaultUsers) {
+      console.log('logggedUser2222', dto);
       exists = await User.countBy({ username: dto.username });
       if (exists <= 0) {
         user = User.create(dto);
+        console.log('logggedUser2222', user);
+
         if (!isEmpty(dto.newPassword)) {
           await user.setNewPassword(dto.newPassword);
         }

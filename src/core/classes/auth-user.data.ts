@@ -10,7 +10,7 @@ export class AuthUserData extends PartialType(
     'email',
     'phoneNumber',
     'address',
-    //'branchId',
+    'branchId',
     'roleId',
   ] as const),
 ) {}
