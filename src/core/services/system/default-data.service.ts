@@ -301,11 +301,9 @@ export class DefaultDataService {
     }
     let user: User;
     for (const dto of defaultUsers) {
-      console.log('logggedUser2222', dto);
       exists = await User.countBy({ username: dto.username });
       if (exists <= 0) {
         user = User.create(dto);
-        console.log('logggedUser2222', user);
 
         if (!isEmpty(dto.newPassword)) {
           await user.setNewPassword(dto.newPassword);
