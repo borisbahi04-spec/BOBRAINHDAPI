@@ -89,6 +89,9 @@ export class DeliveryService extends AbstractService<Delivery> {
           },
         );
       }
+      if (dto.transporter.id == '') {
+        delete dto.transporter.id;
+      }
 
       if (!dto.sellingId) {
         if (!dto.transporter) {

@@ -29,7 +29,9 @@ export class DeliveryTransportDto extends PartialType(
 ) {
   @IsNotEmpty()
   @IsUUID()
-  @ValidateIf((p: CreateCustomerDto) => !p.firstName && !p.phoneNumber)
+  @ValidateIf(
+    (p: CreateCustomerDto) => !p.firstName && !p.lastName && !p.phoneNumber,
+  )
   @ApiPropertyOptional()
   id: string;
 }

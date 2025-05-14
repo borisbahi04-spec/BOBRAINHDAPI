@@ -170,6 +170,8 @@ export class DeliveryController {
     @Body() dto: CreateDeliveryDto,
     @Query() query?: any,
   ): Promise<Delivery> {
+    console.log('dto55555', dto);
+
     const delivery = await this.service.createRecord(dto);
 
     const options = buildFilterFromApiSearchParams(
