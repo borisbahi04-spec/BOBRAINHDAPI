@@ -35,7 +35,6 @@ export class DefaultDataService {
     const branches = await this.createBranchesDefaultData();
     const acccess = await this.createAccessDefaultData();
     const roles = await this.createRolesDefaultData();
-    console.log('kjkjkjk', roles);
     const users = await this.createUsersDefaultData();
     const reasons = await this.createReasonsDefaultData();
     const equipmentTypes = await this.createEquipmentTypesDefaultData();

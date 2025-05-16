@@ -27,6 +27,7 @@ import { diskStorage } from 'multer';
 import { Scope, Module } from '@nestjs/common';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { CoreFactoryModule } from './core_factory/core_factory.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
       isGlobal: true,
     }),
     { module: CoreModule, global: true },
+    { module: CoreFactoryModule, global: true },
     { module: AuthModule, global: true },
     { module: MailModule, global: true },
     { module: PaginationModule, global: true },

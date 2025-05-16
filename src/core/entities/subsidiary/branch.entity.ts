@@ -21,6 +21,11 @@ import { Reception } from '../stockmanagement/reception.entity';
 import { Production } from '../stockmanagement/production.entity';
 import { Selling } from '../selling/selling.entity';
 import { Delivery } from '../selling/delivery.entity';
+import { Stack } from 'src/core_factory/entities/roaster/stack.entity';
+import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
+import { RoasterToHumidityAfterCooking } from 'src/core_factory/entities/roaster/roaster-to-humidity-after-cooking.entity';
+import { RoasterToHumidityAfterCooling } from 'src/core_factory/entities/roaster/roaster-to-humidity-after-cooling.entity';
+import { RoasterToHumidityBeforeCooking } from 'src/core_factory/entities/roaster/roaster-to-humidity-before-cooking.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -130,6 +135,18 @@ export class Branch extends CoreEntity {
   })
   orders: Order[];
 
+  @ApiProperty({ required: false, type: () => [Stack] })
+  @OneToMany(() => Stack, (stack) => stack.branch, {
+    cascade: true,
+  })
+  stacks: Stack[];
+
+  @ApiProperty({ required: false, type: () => [Roaster] })
+  @OneToMany(() => Stack, (roaster) => roaster.branch, {
+    cascade: true,
+  })
+  roasters: Roaster[];
+
   @ApiProperty({ required: false, type: () => [Selling] })
   @OneToMany(() => Selling, (selling) => selling.branch, {
     cascade: true,
@@ -147,4 +164,37 @@ export class Branch extends CoreEntity {
     cascade: true,
   })
   productions: Production[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [RoasterToHumidityBeforeCooking],
+  })
+  @OneToMany(
+    () => RoasterToHumidityBeforeCooking,
+    (roasterToBeforeHumidity) => roasterToBeforeHumidity.branch,
+    {
+      cascade: true,
+    },
+  )
+  roasterToHumidityBeforeCookings: RoasterToHumidityBeforeCooking[];
+
+  @ApiProperty({ required: false, type: () => [RoasterToHumidityAfterCooking] })
+  @OneToMany(
+    () => RoasterToHumidityAfterCooking,
+    (roasterToHumidityAfterCooking) => roasterToHumidityAfterCooking.branch,
+    {
+      cascade: true,
+    },
+  )
+  roasterToHumidityAfterCookings: RoasterToHumidityAfterCooking[];
+
+  @ApiProperty({ required: false, type: () => [RoasterToHumidityAfterCooling] })
+  @OneToMany(
+    () => RoasterToHumidityAfterCooling,
+    (roasterToHumidityAfterCooling) => roasterToHumidityAfterCooling.branch,
+    {
+      cascade: true,
+    },
+  )
+  roasterToHumidityAfterCoolings: RoasterToHumidityAfterCooling[];
 }
