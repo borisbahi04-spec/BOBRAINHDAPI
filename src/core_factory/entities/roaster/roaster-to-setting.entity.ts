@@ -4,7 +4,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import { instanceToPlain } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
-import { PressionInBarEnum } from 'src/core_factory/definitions/enums';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { Roaster } from './roaster.entity';
 import { RoasterToSettingToCoocleaSpeed } from './roaster-to-setting-to-coocleaspeed.entity';
@@ -22,7 +21,7 @@ export class RoasterToSetting extends CoreEntity {
     description: `Pression en Bar`,
   })
   @Column({ name: 'pression', nullable: false })
-  pression: PressionInBarEnum;
+  pression: number;
 
   @IsUUID()
   @IsNotEmpty()

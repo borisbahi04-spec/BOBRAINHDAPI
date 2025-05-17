@@ -19,10 +19,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
-import {
-  PressionInBarEnum,
-  RoasterStatusEnum,
-} from 'src/core_factory/definitions/enums';
+import { RoasterStatusEnum } from 'src/core_factory/definitions/enums';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { Stack } from './stack.entity';
 import { RoasterToHumidityAfterCooking } from './roaster-to-humidity-after-cooking.entity';
@@ -30,6 +27,9 @@ import { RoasterToHumidityAfterCooling } from './roaster-to-humidity-after-cooli
 import { RoasterToHumidityBeforeCooking } from './roaster-to-humidity-before-cooking.entity';
 import { RoasterToSetting } from './roaster-to-setting.entity';
 import { Shift } from '../setting/shift.entity';
+import { Qashelling } from '../qashelling/qashelling.entity';
+import { Size } from '../setting/size.entity';
+import { size } from 'lodash';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -80,13 +80,27 @@ export class Roaster extends CoreEntity {
   @IsString()
   @ApiProperty({
     required: true,
-    description: `Pression en Bar`,
+    description: `Temps ecoulé en min`,
   })
   @Column({
     type: 'integer',
     unsigned: true,
   })
-  pressionInBar: PressionInBarEnum;
+  temps: number;
+
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'size_id', type: 'uuid', nullable: false })
+  sizeId: string;
+
+  @ApiProperty({ required: false, type: () => Size })
+  @ManyToOne(() => Shift, (size) => size.roasters, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn({ name: 'size_id' })
+  size: Size;
 
   @IsUUID()
   @IsNotEmpty()
@@ -173,6 +187,12 @@ export class Roaster extends CoreEntity {
     },
   )
   roasterToSettings: RoasterToSetting[];
+
+  @ApiProperty({ required: false, type: () => [Qashelling] })
+  @OneToMany(() => Qashelling, (qashelling) => qashelling.roaster, {
+    cascade: true,
+  })
+  qashellings: Qashelling[];
 
   toJSON() {
     return instanceToPlain(this);

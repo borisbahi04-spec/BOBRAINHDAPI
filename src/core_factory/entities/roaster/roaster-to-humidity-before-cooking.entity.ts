@@ -1,10 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CashewStage } from '../setting/cashew-stage.entity';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
 import { Roaster } from './roaster.entity';
+import { Shift } from '../setting/shift.entity';
 
 /**
  * Relationship table {branch, product} with custom properties
@@ -13,6 +20,17 @@ import { Roaster } from './roaster.entity';
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
 })
 export class RoasterToHumidityBeforeCooking extends CoreEntity {
+  @IsOptional()
+  @IsDateString()
+  @ApiPropertyOptional({ description: `Date` })
+  @Column({
+    name: 'roastertohumbeforecook_date',
+    type: 'datetime',
+    nullable: true,
+    default: () => '(CURRENT_DATE)',
+  })
+  date: Date;
+
   @IsOptional()
   @IsInt()
   @ApiProperty({ required: false, description: `Valeur de l'humidité %` })
@@ -41,6 +59,20 @@ export class RoasterToHumidityBeforeCooking extends CoreEntity {
   )
   @JoinColumn({ name: 'roaster_id' })
   roaster: Roaster;
+
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'shift_id', type: 'uuid', nullable: false })
+  shiftId: string;
+
+  @ApiProperty({ required: false, type: () => Shift })
+  @ManyToOne(() => Shift, (shift) => shift.roasterToHumidityBeforeCookings, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn({ name: 'shift_id' })
+  shift: Shift;
 
   @IsUUID()
   @IsNotEmpty()

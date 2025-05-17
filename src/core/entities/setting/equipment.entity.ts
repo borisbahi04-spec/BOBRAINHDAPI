@@ -7,18 +7,14 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { CoreEntity } from '../base/core.entity';
 import { instanceToPlain } from 'class-transformer';
 import { EquipmentType } from './equipment-type.entity';
 import { Section } from './section.entity';
 import { SellingToProduct } from '../selling/selling-to-product.entity';
 import { DeliveryToProduct } from '../selling/delivery-to-product.entity';
+import { Qashelling } from 'src/core_factory/entities/qashelling/qashelling.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -91,6 +87,12 @@ export class Equipment extends CoreEntity {
     },
   )
   deliveryToProducts: DeliveryToProduct[];
+
+  @ApiProperty({ required: false, type: () => [Qashelling] })
+  @OneToMany(() => Qashelling, (qashelling) => qashelling.equipment, {
+    cascade: true,
+  })
+  qashellings: Qashelling[];
 
   toJSON() {
     return instanceToPlain(this);

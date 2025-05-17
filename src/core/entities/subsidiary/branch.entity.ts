@@ -26,6 +26,14 @@ import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
 import { RoasterToHumidityAfterCooking } from 'src/core_factory/entities/roaster/roaster-to-humidity-after-cooking.entity';
 import { RoasterToHumidityAfterCooling } from 'src/core_factory/entities/roaster/roaster-to-humidity-after-cooling.entity';
 import { RoasterToHumidityBeforeCooking } from 'src/core_factory/entities/roaster/roaster-to-humidity-before-cooking.entity';
+import { Qashelling } from 'src/core_factory/entities/qashelling/qashelling.entity';
+import { QashellingToPercentageOfKernel } from 'src/core_factory/entities/qashelling/qashelling-to-percentage-of-kernel.entity';
+import { instanceToPlain } from 'class-transformer';
+import { QashellingToPercentageOfUnscooped } from 'src/core_factory/entities/qashelling/qashelling-to-percentage-of-unscooped.entity';
+import { QashellingToHumidity } from 'src/core_factory/entities/qashelling/qashelling-to-humidity.entity';
+import { QashellingOutputToKernel } from 'src/core_factory/entities/qashelling/qashelling-output-to-kernel.entity';
+import { QashellingToKernel } from 'src/core_factory/entities/qashelling/qashelling-to-kernel.entity';
+import { QashellingOutputToNetCount } from 'src/core_factory/entities/qashelling/qashelling-output-to-netcount.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -197,4 +205,93 @@ export class Branch extends CoreEntity {
     },
   )
   roasterToHumidityAfterCoolings: RoasterToHumidityAfterCooling[];
+
+  @ApiProperty({ required: false, type: () => [Qashelling] })
+  @OneToMany(() => Qashelling, (qashelling) => qashelling.branch, {
+    cascade: true,
+  })
+  qashellings: Qashelling[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingToPercentageOfKernel],
+  })
+  @OneToMany(
+    () => QashellingToPercentageOfKernel,
+    (qashellingToPercentageOfKernel) => qashellingToPercentageOfKernel.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingToPercentageOfKernels: QashellingToPercentageOfKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingToPercentageOfUnscooped],
+  })
+  @OneToMany(
+    () => QashellingToPercentageOfUnscooped,
+    (qashellingToPercentageOfUnscooped) =>
+      qashellingToPercentageOfUnscooped.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingToPercentageOfUnscoopeds: QashellingToPercentageOfUnscooped[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingToHumidity],
+  })
+  @OneToMany(
+    () => QashellingToHumidity,
+    (qashellingToHumidity) => qashellingToHumidity.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingToHumidities: QashellingToHumidity[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingOutputToKernel],
+  })
+  @OneToMany(
+    () => QashellingOutputToKernel,
+    (qashellingOutputToKernel) => qashellingOutputToKernel.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingOutputToKernels: QashellingOutputToKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingToKernel],
+  })
+  @OneToMany(
+    () => QashellingToKernel,
+    (qashellingToKernel) => qashellingToKernel.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingToKernels: QashellingToKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingOutputToNetCount],
+  })
+  @OneToMany(
+    () => QashellingOutputToNetCount,
+    (qashellingOutputToNetCount) => qashellingOutputToNetCount.branch,
+    {
+      cascade: true,
+    },
+  )
+  qashellingOutputToNetCounts: QashellingOutputToNetCount[];
+
+  toJSON() {
+    return instanceToPlain(this);
+  }
 }

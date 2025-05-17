@@ -1,17 +1,11 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsUUID,
-} from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { CashewStage } from '../setting/cashew-stage.entity';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
-import { Roaster } from './roaster.entity';
 import { Shift } from '../setting/shift.entity';
+import { Qashelling } from './qashelling.entity';
 
 /**
  * Relationship table {branch, product} with custom properties
@@ -19,21 +13,10 @@ import { Shift } from '../setting/shift.entity';
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
 })
-export class RoasterToHumidityAfterCooking extends CoreEntity {
-  @IsOptional()
-  @IsDateString()
-  @ApiPropertyOptional({ description: `Date` })
-  @Column({
-    name: 'roastertohumaftercook_date',
-    type: 'datetime',
-    nullable: true,
-    default: () => '(CURRENT_DATE)',
-  })
-  date: Date;
-
+export class QashellingToHumidity extends CoreEntity {
   @IsOptional()
   @IsInt()
-  @ApiProperty({ required: false, description: `Valeur de l'humidité %` })
+  @ApiProperty({ required: false, description: `Valeur  %` })
   @Column({
     name: 'value',
     type: 'integer',
@@ -44,21 +27,21 @@ export class RoasterToHumidityAfterCooking extends CoreEntity {
 
   @IsUUID()
   @IsNotEmpty()
-  @Column({ name: 'roaster_id', type: 'uuid', nullable: false })
-  roaster_id: string;
+  @Column({ name: 'qashelling_id', type: 'uuid', nullable: false })
+  qashelling_id: string;
 
-  @ApiProperty({ required: false, type: () => Roaster })
+  @ApiProperty({ required: false, type: () => Qashelling })
   @ManyToOne(
-    () => Roaster,
-    (roaster) => roaster.roasterToHumidityAfterCookings,
+    () => Qashelling,
+    (qashelling) => qashelling.qashellingToHumidities,
     {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
       orphanedRowAction: 'delete',
     },
   )
-  @JoinColumn({ name: 'roaster_id' })
-  roaster: Roaster;
+  @JoinColumn({ name: 'qashelling_id' })
+  qashelling: Qashelling;
 
   @IsUUID()
   @IsNotEmpty()
@@ -66,7 +49,7 @@ export class RoasterToHumidityAfterCooking extends CoreEntity {
   shiftId: string;
 
   @ApiProperty({ required: false, type: () => Shift })
-  @ManyToOne(() => Shift, (shift) => shift.roasterToHumidityAfterCookings, {
+  @ManyToOne(() => Shift, (shift) => shift.qashellingToHumidities, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
@@ -80,7 +63,7 @@ export class RoasterToHumidityAfterCooking extends CoreEntity {
   branchId: string;
 
   @ApiProperty({ required: false, type: () => Branch })
-  @ManyToOne(() => Branch, (branch) => branch.roasterToHumidityAfterCookings, {
+  @ManyToOne(() => Branch, (branch) => branch.qashellingToHumidities, {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE',
     orphanedRowAction: 'delete',
@@ -96,7 +79,7 @@ export class RoasterToHumidityAfterCooking extends CoreEntity {
   @ApiProperty({ required: false, type: () => CashewStage })
   @ManyToOne(
     () => CashewStage,
-    (cashewStage) => cashewStage.roasterToHumidityAfterCookings,
+    (cashewStage) => cashewStage.qashellingToHumidities,
     {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',

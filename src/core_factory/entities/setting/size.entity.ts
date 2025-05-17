@@ -1,13 +1,14 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { instanceToPlain } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
 import {
   SizeLevelEnum,
   SizeNameEnum,
 } from 'src/core_factory/definitions/enums';
+import { Roaster } from '../roaster/roaster.entity';
 //import { OptionToTax } from './option-to-tax.entity';
 
 @Entity({
@@ -25,6 +26,12 @@ export class Size extends CoreEntity {
   @IsString()
   @Column({ name: 'level' })
   level: SizeLevelEnum;
+
+  @ApiProperty({ required: false, type: () => [Roaster] })
+  @OneToMany(() => Roaster, (roaster) => roaster.size, {
+    cascade: true,
+  })
+  roasters: Roaster[];
 
   toJSON() {
     return instanceToPlain(this);

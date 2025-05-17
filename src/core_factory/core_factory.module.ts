@@ -17,6 +17,15 @@ import { CylinderTemperature } from './entities/setting/cylinder-temperature.ent
 import { RoasterToSettingToCylinderTemperature } from './entities/roaster/roaster-to-setting-to-cylindertemperature.entity copy';
 import { RoasterToSettingToDirectSteam } from './entities/roaster/roaster-to-setting-to-directsteam.entity';
 import { DirectSteam } from './entities/setting/direct-steam.entity';
+import { Qashelling } from './entities/qashelling/qashelling.entity';
+import { QashellingToPercentageOfKernel } from './entities/qashelling/qashelling-to-percentage-of-kernel.entity';
+import { QashellingToPercentageOfUnscooped } from './entities/qashelling/qashelling-to-percentage-of-unscooped.entity';
+import { QashellingToHumidity } from './entities/qashelling/qashelling-to-humidity.entity';
+import { Line } from './entities/setting/line.entity';
+import { QashellingOutputToKernel } from './entities/qashelling/qashelling-output-to-kernel.entity';
+import { QashellingOutput } from './entities/qashelling/qashelling-output.entity';
+import { QashellingToKernel } from './entities/qashelling/qashelling-to-kernel.entity';
+import { QashellingOutputToNetCount } from './entities/qashelling/qashelling-output-to-netcount.entity';
 
 @Module({
   imports: [
@@ -36,6 +45,15 @@ import { DirectSteam } from './entities/setting/direct-steam.entity';
       RoasterToSettingToDirectSteam,
       DirectSteam,
       Stack,
+      Qashelling,
+      QashellingToKernel,
+      QashellingToPercentageOfKernel,
+      QashellingToPercentageOfUnscooped,
+      QashellingToHumidity,
+      QashellingOutput,
+      QashellingOutputToKernel,
+      QashellingOutputToNetCount,
+      Line,
     ]),
   ],
   controllers: [],
