@@ -26,6 +26,14 @@ import { QashellingOutputToKernel } from './entities/qashelling/qashelling-outpu
 import { QashellingOutput } from './entities/qashelling/qashelling-output.entity';
 import { QashellingToKernel } from './entities/qashelling/qashelling-to-kernel.entity';
 import { QashellingOutputToNetCount } from './entities/qashelling/qashelling-output-to-netcount.entity';
+import { QacycloneToKernel } from './entities/qacyclone/qacyclone-to-kernel.entity';
+import { Qacyclone } from './entities/qacyclone/qacyclone.entity';
+import { Qaimpactor } from './entities/qaimpactor/qaimpactor.entity';
+import { QaimpactorToFirstOutput } from './entities/qaimpactor/qaimpactor-to-firstoutput.entity';
+import { QaimpactorToSecondOutput } from './entities/qaimpactor/qaimpactor-to-second-output.entity';
+import { QashellingOutputToLotNumber } from './entities/qashelling/qashelling-output-to-lotnumber.entity';
+import { QaimpactorToShellingOutput } from './entities/qaimpactor/qaimpactor-to-shelling-output.entity';
+import { QacycloneToShellingOutput } from './entities/qacyclone/qacyclone-to-shellingoutput.entity';
 
 @Module({
   imports: [
@@ -53,6 +61,14 @@ import { QashellingOutputToNetCount } from './entities/qashelling/qashelling-out
       QashellingOutput,
       QashellingOutputToKernel,
       QashellingOutputToNetCount,
+      QashellingOutputToLotNumber,
+      Qacyclone,
+      QacycloneToKernel,
+      QacycloneToShellingOutput,
+      Qaimpactor,
+      QaimpactorToFirstOutput,
+      QaimpactorToSecondOutput,
+      QaimpactorToShellingOutput,
       Line,
     ]),
   ],

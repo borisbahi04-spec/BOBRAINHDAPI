@@ -13,6 +13,9 @@ import { QashellingToPercentageOfUnscooped } from '../qashelling/qashelling-to-p
 import { QashellingToHumidity } from '../qashelling/qashelling-to-humidity.entity';
 import { QashellingOutputToKernel } from '../qashelling/qashelling-output-to-kernel.entity';
 import { QashellingToKernel } from '../qashelling/qashelling-to-kernel.entity';
+import { QacycloneToKernel } from '../qacyclone/qacyclone-to-kernel.entity';
+import { QaimpactorToFirstOutput } from '../qaimpactor/qaimpactor-to-firstoutput.entity';
+import { QaimpactorToSecondOutput } from '../qaimpactor/qaimpactor-to-second-output.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -131,6 +134,45 @@ export class CashewStage extends CoreEntity {
     },
   )
   qashellingToKernels: QashellingToKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QacycloneToKernel],
+  })
+  @OneToMany(
+    () => QacycloneToKernel,
+    (qacycloneToKernel) => qacycloneToKernel.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qacycloneToKernels: QacycloneToKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QaimpactorToFirstOutput],
+  })
+  @OneToMany(
+    () => QaimpactorToFirstOutput,
+    (qaimpactorToFirstOutput) => qaimpactorToFirstOutput.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qaimpactorToFirstOutputs: QaimpactorToFirstOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QaimpactorToSecondOutput],
+  })
+  @OneToMany(
+    () => QaimpactorToSecondOutput,
+    (qaimpactorToSecondOutput) => qaimpactorToSecondOutput.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qaimpactorToSecondOutputs: QaimpactorToSecondOutput[];
 
   toJSON() {
     return instanceToPlain(this);

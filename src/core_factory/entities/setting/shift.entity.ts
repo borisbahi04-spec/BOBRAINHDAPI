@@ -15,6 +15,14 @@ import { QashellingToHumidity } from '../qashelling/qashelling-to-humidity.entit
 import { QashellingOutputToKernel } from '../qashelling/qashelling-output-to-kernel.entity';
 import { QashellingToKernel } from '../qashelling/qashelling-to-kernel.entity';
 import { QashellingOutputToNetCount } from '../qashelling/qashelling-output-to-netcount.entity';
+import { QacycloneToKernel } from '../qacyclone/qacyclone-to-kernel.entity';
+import { QacycloneToShellingOutput } from '../qacyclone/qacyclone-to-shellingoutput.entity';
+import { Qacyclone } from '../qacyclone/qacyclone.entity';
+import { Qaimpactor } from '../qaimpactor/qaimpactor.entity';
+import { QaimpactorToFirstOutput } from '../qaimpactor/qaimpactor-to-firstoutput.entity';
+import { QaimpactorToSecondOutput } from '../qaimpactor/qaimpactor-to-second-output.entity';
+import { QashellingOutputToLotNumber } from '../qashelling/qashelling-output-to-lotnumber.entity';
+import { QaimpactorToShellingOutput } from '../qaimpactor/qaimpactor-to-shelling-output.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -153,6 +161,102 @@ export class Shift extends CoreEntity {
     },
   )
   qashellingOutputToNetCounts: QashellingOutputToNetCount[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QacycloneToKernel],
+  })
+  @OneToMany(
+    () => QacycloneToKernel,
+    (qacycloneToKernel) => qacycloneToKernel.shift,
+    {
+      cascade: true,
+    },
+  )
+  qacycloneToKernels: QacycloneToKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [Qacyclone],
+  })
+  @OneToMany(() => Qacyclone, (qacyclone) => qacyclone.shift, {
+    cascade: true,
+  })
+  qacyclones: Qacyclone[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [Qaimpactor],
+  })
+  @OneToMany(() => Qaimpactor, (qaimpactor) => qaimpactor.shift, {
+    cascade: true,
+  })
+  qaimpactors: Qaimpactor[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QaimpactorToFirstOutput],
+  })
+  @OneToMany(
+    () => QaimpactorToFirstOutput,
+    (qaimpactorToFirstOutput) => qaimpactorToFirstOutput.shift,
+    {
+      cascade: true,
+    },
+  )
+  qaimpactorToFirstOutputs: QaimpactorToFirstOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QaimpactorToSecondOutput],
+  })
+  @OneToMany(
+    () => QaimpactorToSecondOutput,
+    (qaimpactorToSecondOutput) => qaimpactorToSecondOutput.shift,
+    {
+      cascade: true,
+    },
+  )
+  qaimpactorToSecondOutputs: QaimpactorToSecondOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QaimpactorToShellingOutput],
+  })
+  @OneToMany(
+    () => QaimpactorToShellingOutput,
+    (qaimpactorToShellingOutput) => qaimpactorToShellingOutput.shift,
+    {
+      cascade: true,
+    },
+  )
+  qaimpactorToShellingOutputs: QaimpactorToShellingOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QashellingOutputToLotNumber],
+  })
+  @OneToMany(
+    () => QashellingOutputToLotNumber,
+    (qashellingOutputToLotNumber) => qashellingOutputToLotNumber.shift,
+    {
+      cascade: true,
+    },
+  )
+  qashellingOutputToLotNumbers: QashellingOutputToLotNumber[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QacycloneToShellingOutput],
+  })
+  @OneToMany(
+    () => QacycloneToShellingOutput,
+    (qacycloneToShellingOutput) => qacycloneToShellingOutput.shift,
+    {
+      cascade: true,
+    },
+  )
+  qacycloneToShellingOutputs: QacycloneToShellingOutput[];
 
   toJSON() {
     return instanceToPlain(this);

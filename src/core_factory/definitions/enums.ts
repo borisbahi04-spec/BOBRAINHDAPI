@@ -34,6 +34,20 @@ export enum QashellingStatusEnum {
   canceled = 'canceled',
 }
 
+export enum QacycloneStatusEnum {
+  pending = 'pending',
+  closed = 'closed',
+  canceled = 'canceled',
+}
+
+export enum QaimpactorStatusEnum {
+  pending = 'pending',
+  closed = 'closed',
+  canceled = 'canceled',
+}
+
+
+
 export enum PressionInBarEnum {
   P35BARS20MIN = '3,5BARS/20MIN',
   P35BARS22MIN = '3,5BARS/22MIN',
