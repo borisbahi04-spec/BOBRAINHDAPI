@@ -83,10 +83,11 @@ export class Roaster extends CoreEntity {
     description: `Temps ecoulé en min`,
   })
   @Column({
+    name: 'roaster_time',
     type: 'integer',
     unsigned: true,
   })
-  temps: number;
+  time: number;
 
   @IsUUID()
   @IsNotEmpty()

@@ -39,6 +39,9 @@ import { QapeelingToInputKernel } from './entities/qapeeling/qapeeling-to-input-
 import { QapeelingToTestaKernel } from './entities/qapeeling/qapeeling-to-testa-kernel.entity';
 import { QapeelingToUnpeeledKernel } from './entities/qapeeling/qapeeling-to-unpeeled-kernel.entity';
 import { QapeelingToPeeledKernel } from './entities/qapeeling/qapeeling-to-peeled-kernel.entity';
+import { RoasterController } from './controllers/roaster/roaster.controller';
+import { RoasterService } from './services/roaster/roaster.service';
+import { RoasterSubscriber } from './services/roaster/roaster.subscriber';
 
 @Module({
   imports: [
@@ -82,8 +85,8 @@ import { QapeelingToPeeledKernel } from './entities/qapeeling/qapeeling-to-peele
       Line,
     ]),
   ],
-  controllers: [],
-  providers: [DefaultDataService],
+  controllers: [RoasterController],
+  providers: [DefaultDataService, RoasterService, RoasterSubscriber],
   exports: [],
 })
 export class CoreFactoryModule implements OnApplicationBootstrap {

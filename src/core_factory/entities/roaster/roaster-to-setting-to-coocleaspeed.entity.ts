@@ -69,41 +69,6 @@ export class RoasterToSettingToCoocleaSpeed extends CoreEntity {
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
 
-  /*
-  @ApiProperty({
-    required: false,
-    type: () => [RoasterToHumidityBeforeCooking],
-  })
-  @OneToMany(
-    () => RoasterToHumidityBeforeCooking,
-    (roasterToHumidityBeforeHumidity) =>
-      roasterToHumidityBeforeHumidity.roaster,
-    {
-      cascade: true,
-    },
-  )
-  roasterToHumidityBeforeCookings: RoasterToHumidityBeforeCooking[];
-
-  @ApiProperty({ required: false, type: () => [RoasterToHumidityAfterCooking] })
-  @OneToMany(
-    () => RoasterToHumidityAfterCooking,
-    (roasterToHumidityAfterCooking) => roasterToHumidityAfterCooking.roaster,
-    {
-      cascade: true,
-    },
-  )
-  roasterToHumidityAfterCookings: RoasterToHumidityAfterCooking[];
-
-  @ApiProperty({ required: false, type: () => [RoasterToHumidityAfterCooling] })
-  @OneToMany(
-    () => RoasterToHumidityAfterCooling,
-    (roasterToHumidityAfterCooling) => roasterToHumidityAfterCooling.roaster,
-    {
-      cascade: true,
-    },
-  )
-  roasterToHumidityAfterCoolings: RoasterToHumidityAfterCooling[];
-*/
   toJSON() {
     return instanceToPlain(this);
   }
