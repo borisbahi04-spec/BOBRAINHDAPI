@@ -46,6 +46,12 @@ export enum QaimpactorStatusEnum {
   canceled = 'canceled',
 }
 
+export enum QapeelingStatusEnum {
+  pending = 'pending',
+  closed = 'closed',
+  canceled = 'canceled',
+}
+
 
 
 export enum PressionInBarEnum {

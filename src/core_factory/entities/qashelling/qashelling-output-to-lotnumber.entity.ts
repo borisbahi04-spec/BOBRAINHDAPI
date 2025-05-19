@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { instanceToPlain } from 'class-transformer';
@@ -7,6 +7,7 @@ import { CoreEntity } from 'src/core/entities/base/core.entity';
 import { Shift } from '../setting/shift.entity';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { QashellingOutput } from './qashelling-output.entity';
+import { Qapeeling } from '../qapeeling/qapeeling.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -75,6 +76,19 @@ export class QashellingOutputToLotNumber extends CoreEntity {
   })
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
+
+  @ApiProperty({
+    required: false,
+    type: () => [Qapeeling],
+  })
+  @OneToMany(
+    () => Qapeeling,
+    (qapeeling) => qapeeling.qashellingOutputToLotNumber,
+    {
+      cascade: true,
+    },
+  )
+  qapeelings: Qapeeling[];
 
   toJSON() {
     return instanceToPlain(this);

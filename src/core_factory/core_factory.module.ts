@@ -34,6 +34,11 @@ import { QaimpactorToSecondOutput } from './entities/qaimpactor/qaimpactor-to-se
 import { QashellingOutputToLotNumber } from './entities/qashelling/qashelling-output-to-lotnumber.entity';
 import { QaimpactorToShellingOutput } from './entities/qaimpactor/qaimpactor-to-shelling-output.entity';
 import { QacycloneToShellingOutput } from './entities/qacyclone/qacyclone-to-shellingoutput.entity';
+import { Qapeeling } from './entities/qapeeling/qapeeling.entity';
+import { QapeelingToInputKernel } from './entities/qapeeling/qapeeling-to-input-kernel.entity';
+import { QapeelingToTestaKernel } from './entities/qapeeling/qapeeling-to-testa-kernel.entity';
+import { QapeelingToUnpeeledKernel } from './entities/qapeeling/qapeeling-to-unpeeled-kernel.entity';
+import { QapeelingToPeeledKernel } from './entities/qapeeling/qapeeling-to-peeled-kernel.entity';
 
 @Module({
   imports: [
@@ -69,6 +74,11 @@ import { QacycloneToShellingOutput } from './entities/qacyclone/qacyclone-to-she
       QaimpactorToFirstOutput,
       QaimpactorToSecondOutput,
       QaimpactorToShellingOutput,
+      Qapeeling,
+      QapeelingToInputKernel,
+      QapeelingToPeeledKernel,
+      QapeelingToUnpeeledKernel,
+      QapeelingToTestaKernel,
       Line,
     ]),
   ],

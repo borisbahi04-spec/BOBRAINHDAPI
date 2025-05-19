@@ -16,6 +16,10 @@ import { QashellingToKernel } from '../qashelling/qashelling-to-kernel.entity';
 import { QacycloneToKernel } from '../qacyclone/qacyclone-to-kernel.entity';
 import { QaimpactorToFirstOutput } from '../qaimpactor/qaimpactor-to-firstoutput.entity';
 import { QaimpactorToSecondOutput } from '../qaimpactor/qaimpactor-to-second-output.entity';
+import { QapeelingToInputKernel } from '../qapeeling/qapeeling-to-input-kernel.entity';
+import { QapeelingToPeeledKernel } from '../qapeeling/qapeeling-to-peeled-kernel.entity';
+import { QapeelingToUnpeeledKernel } from '../qapeeling/qapeeling-to-unpeeled-kernel.entity';
+import { QapeelingToTestaKernel } from '../qapeeling/qapeeling-to-testa-kernel.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -173,6 +177,58 @@ export class CashewStage extends CoreEntity {
     },
   )
   qaimpactorToSecondOutputs: QaimpactorToSecondOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToInputKernel],
+  })
+  @OneToMany(
+    () => QapeelingToInputKernel,
+    (qapeelingToInputKernel) => qapeelingToInputKernel.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToInputKernels: QapeelingToInputKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToPeeledKernel],
+  })
+  @OneToMany(
+    () => QapeelingToPeeledKernel,
+    (qapeelingToPeeledKernel) => qapeelingToPeeledKernel.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToPeeledKernels: QapeelingToPeeledKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToUnpeeledKernel],
+  })
+  @OneToMany(
+    () => QapeelingToUnpeeledKernel,
+    (qapeelingToUnpeeledKernel) => qapeelingToUnpeeledKernel.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToUnpeeledKernels: QapeelingToUnpeeledKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToTestaKernel],
+  })
+  @OneToMany(
+    () => QapeelingToTestaKernel,
+    (qapeelingToTestaKernel) => qapeelingToTestaKernel.cashewStage,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToTestaKernels: QapeelingToTestaKernel[];
 
   toJSON() {
     return instanceToPlain(this);

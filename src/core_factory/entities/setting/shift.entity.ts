@@ -23,6 +23,11 @@ import { QaimpactorToFirstOutput } from '../qaimpactor/qaimpactor-to-firstoutput
 import { QaimpactorToSecondOutput } from '../qaimpactor/qaimpactor-to-second-output.entity';
 import { QashellingOutputToLotNumber } from '../qashelling/qashelling-output-to-lotnumber.entity';
 import { QaimpactorToShellingOutput } from '../qaimpactor/qaimpactor-to-shelling-output.entity';
+import { Qapeeling } from '../qapeeling/qapeeling.entity';
+import { QapeelingToInputKernel } from '../qapeeling/qapeeling-to-input-kernel.entity';
+import { QapeelingToPeeledKernel } from '../qapeeling/qapeeling-to-peeled-kernel.entity';
+import { QapeelingToUnpeeledKernel } from '../qapeeling/qapeeling-to-unpeeled-kernel.entity';
+import { QapeelingToTestaKernel } from '../qapeeling/qapeeling-to-testa-kernel.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -195,6 +200,15 @@ export class Shift extends CoreEntity {
 
   @ApiProperty({
     required: false,
+    type: () => [Qapeeling],
+  })
+  @OneToMany(() => Qapeeling, (qapeeling) => qapeeling.shift, {
+    cascade: true,
+  })
+  qapeelings: Qapeeling[];
+
+  @ApiProperty({
+    required: false,
     type: () => [QaimpactorToFirstOutput],
   })
   @OneToMany(
@@ -257,6 +271,58 @@ export class Shift extends CoreEntity {
     },
   )
   qacycloneToShellingOutputs: QacycloneToShellingOutput[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToInputKernel],
+  })
+  @OneToMany(
+    () => QapeelingToInputKernel,
+    (qapeelingToInputKernel) => qapeelingToInputKernel.shift,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToInputKernels: QapeelingToInputKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToPeeledKernel],
+  })
+  @OneToMany(
+    () => QapeelingToPeeledKernel,
+    (qapeelingToPeeledKernel) => qapeelingToPeeledKernel.shift,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToPeeledKernels: QapeelingToPeeledKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToUnpeeledKernel],
+  })
+  @OneToMany(
+    () => QapeelingToUnpeeledKernel,
+    (qapeelingToUnpeeledKernel) => qapeelingToUnpeeledKernel.shift,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToUnpeeledKernels: QapeelingToUnpeeledKernel[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [QapeelingToTestaKernel],
+  })
+  @OneToMany(
+    () => QapeelingToTestaKernel,
+    (qapeelingToTestaKernel) => qapeelingToTestaKernel.shift,
+    {
+      cascade: true,
+    },
+  )
+  qapeelingToTestaKernels: QapeelingToTestaKernel[];
 
   toJSON() {
     return instanceToPlain(this);

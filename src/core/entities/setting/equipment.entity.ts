@@ -17,6 +17,7 @@ import { DeliveryToProduct } from '../selling/delivery-to-product.entity';
 import { Qashelling } from 'src/core_factory/entities/qashelling/qashelling.entity';
 import { Qacyclone } from 'src/core_factory/entities/qacyclone/qacyclone.entity';
 import { Qaimpactor } from 'src/core_factory/entities/qaimpactor/qaimpactor.entity';
+import { Qapeeling } from 'src/core_factory/entities/qapeeling/qapeeling.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -113,6 +114,15 @@ export class Equipment extends CoreEntity {
     cascade: true,
   })
   qaimpactors: Qaimpactor[];
+
+  @ApiProperty({
+    required: false,
+    type: () => [Qapeeling],
+  })
+  @OneToMany(() => Qapeeling, (qapeeling) => qapeeling.equipment, {
+    cascade: true,
+  })
+  qapeelings: Qapeeling[];
 
   toJSON() {
     return instanceToPlain(this);
