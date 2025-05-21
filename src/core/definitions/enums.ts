@@ -42,6 +42,14 @@ export enum AbilitySubjectEnum {
   OpenTicket = 'OpenTicket',
   StockMovement = 'StockMovement',
   Production = 'Production',
+
+  ///module factory
+  Shift = 'Shift',
+  Size = 'Size',
+  Stack = 'Stack',
+  CoocleaSpeed = 'CoocleaSpeed',
+  CylinderTemperature = 'CylinderTemperature',
+  DirectSteam = 'DirectSteam',
 }
 
 export enum AbilityActionEnum {
@@ -53,7 +61,10 @@ export enum AbilityActionEnum {
   delete = 'delete',
   stream = 'stream',
 }
-
+export enum userTypeEnum {
+  OPERATEUR = 'OPERATOR',
+  OTHER = 'OTHER',
+}
 /**
  * Product *******************************
  */

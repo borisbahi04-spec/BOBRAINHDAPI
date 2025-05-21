@@ -30,34 +30,30 @@ import {
   AbilityActionEnum,
   AbilitySubjectEnum,
 } from 'src/core/definitions/enums';
-import { RoasterService } from 'src/core_factory/services/roaster/roaster.service';
-import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
+import { CoocleaSpeed } from 'src/core_factory/entities/setting/cooclea-speed.entity';
+import { CreateCoocleaSpeedDto } from 'src/core_factory/dto/setting/coocleaspeed/create-cooclea-speed.dto';
+import { UpdateCoocleaSpeedDto } from 'src/core_factory/dto/setting/coocleaspeed/update-cooclea-speed.dto';
 import { AuthUser } from 'src/core/entities/session/auth-user.entity';
-import { UpdateRoasterDto } from 'src/core_factory/dto/roaster/update-roaster.dto';
-import { CreateRoasterDto } from 'src/core_factory/dto/roaster/create-roaster.dto';
+import { CoocleaSpeedService } from 'src/core_factory/services/setting/coocleaspeed/cooclea-speed.service';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
 @CustomApiErrorResponse()
-@ApiTags('roaster')
-@Controller('roaster')
-export class RoasterController {
-  constructor(private service: RoasterService) {}
-
-  /**
-   * Get paginated roaster list
-   */
+@ApiTags('coocleaspeed')
+@Controller('coocleaspeed')
+export class CoocleaSpeedController {
+  constructor(private service: CoocleaSpeedService) {}
   @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Roaster)
+  @CustomApiPaginatedResponse(CoocleaSpeed)
   @Get()
   async findPaginated(
     @CurrentUser() authUser: AuthUser,
     @Query() query?: any,
-  ): Promise<Paginated<Roaster>> {
+  ): Promise<Paginated<CoocleaSpeed>> {
     // Permission check
     await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
-      AbilitySubjectEnum.Product,
+      AbilitySubjectEnum.CoocleaSpeed,
     );
 
     const options = buildFilterFromApiSearchParams(
@@ -72,14 +68,14 @@ export class RoasterController {
   }
 
   /**
-   * Get roaster by id
+   * Get coocleaspeed by id
    */
   @ApiSearchOneQueryFilter()
-  @Get(':roasterId')
+  @Get(':coocleaspeedId')
   async findOne(
-    @Param('roasterId', ParseUUIDPipe) id: string,
+    @Param('coocleaspeedId', ParseUUIDPipe) id: string,
     @Query() query?: any,
-  ): Promise<Roaster> {
+  ): Promise<CoocleaSpeed> {
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,
@@ -92,15 +88,15 @@ export class RoasterController {
   }
 
   /**
-   * Create roaster
+   * Create coocleaspeed
    */
   @ApiSearchOneQueryFilter()
   @Post()
   async create(
-    @Body() dto: CreateRoasterDto,
+    @Body() dto: CreateCoocleaSpeedDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.createRecord(dto);
+  ): Promise<CoocleaSpeed> {
+    const coocleaspeed = await this.service.createRecord(dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -109,21 +105,21 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id },
+      where: { ...options?.where, id: coocleaspeed.id },
     });
   }
 
   /**
-   * Update roaster
+   * Update coocleaspeed
    */
   @ApiSearchOneQueryFilter()
-  @Patch(':roasterId')
+  @Patch(':coocleaspeedId')
   async update(
-    @Param('roasterId', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateRoasterDto,
+    @Param('coocleaspeedId', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCoocleaSpeedDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.updateRecord({ id: id ?? '' }, dto);
+  ): Promise<CoocleaSpeed> {
+    const coocleaspeed = await this.service.updateRecord({ id: id ?? '' }, dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -132,16 +128,16 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id ?? '' },
+      where: { ...options?.where, id: coocleaspeed.id ?? '' },
     });
   }
 
   /**
-   * Remove roaster
+   * Remove coocleaspeed
    */
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':roasterId')
-  async remove(@Param('roasterId', ParseUUIDPipe) id: string) {
+  @Delete(':coocleaspeedId')
+  async remove(@Param('coocleaspeedId', ParseUUIDPipe) id: string) {
     await this.service.deleteRecord({ id: id ?? '' });
     return;
   }

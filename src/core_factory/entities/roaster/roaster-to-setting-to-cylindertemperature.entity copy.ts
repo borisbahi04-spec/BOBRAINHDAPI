@@ -19,8 +19,9 @@ export class RoasterToSettingToCylinderTemperature extends CoreEntity {
   value: number;
   @IsUUID()
   @IsNotEmpty()
+  @ApiProperty({ description: `roastertosetting du CylinderTemperature` })
   @Column({ name: 'roastertosetting_id', type: 'uuid', nullable: false })
-  roastertosetting_id: string;
+  roastertosettingId: string;
 
   @ApiProperty({ required: false, type: () => RoasterToSetting })
   @ManyToOne(
@@ -38,8 +39,9 @@ export class RoasterToSettingToCylinderTemperature extends CoreEntity {
 
   @IsUUID()
   @IsNotEmpty()
+  @ApiProperty({ description: `cylindertemperatureId du CylinderTemperature` })
   @Column({ name: 'cylindertemperature_id', type: 'uuid', nullable: false })
-  cylindertemperature_id: string;
+  cylindertemperatureId: string;
 
   @ApiProperty({ required: false, type: () => CylinderTemperature })
   @ManyToOne(
@@ -57,6 +59,7 @@ export class RoasterToSettingToCylinderTemperature extends CoreEntity {
 
   @IsUUID()
   @IsNotEmpty()
+  @ApiProperty({ description: `branch du CylinderTemperature` })
   @Column({ name: 'branch_id', type: 'uuid', nullable: false })
   branchId: string;
 

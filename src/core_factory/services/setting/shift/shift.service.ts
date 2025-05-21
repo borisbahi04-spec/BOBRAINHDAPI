@@ -3,38 +3,38 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { PaginatedService } from '@app/typeorm';
 import { REQUEST } from '@nestjs/core';
-import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
 import { AbstractService } from 'src/core/services/abstract.service';
-import { UpdateRoasterDto } from 'src/core_factory/dto/roaster/update-roaster.dto';
-import { CreateRoasterDto } from 'src/core_factory/dto/roaster/create-roaster.dto';
+import { Shift } from 'src/core_factory/entities/setting/shift.entity';
+import { UpdateShiftDto } from 'src/core_factory/dto/setting/shift/update-shift.dto';
+import { CreateShiftDto } from 'src/core_factory/dto/setting/shift/create-shift.dto';
 
 @Injectable()
-export class RoasterService extends AbstractService<Roaster> {
+export class ShiftService extends AbstractService<Shift> {
   public NOT_FOUND_MESSAGE = `Client non trouvé`;
 
   constructor(
-    @InjectRepository(Roaster)
-    private _repository: Repository<Roaster>,
-    protected paginatedService: PaginatedService<Roaster>,
+    @InjectRepository(Shift)
+    private _repository: Repository<Shift>,
+    protected paginatedService: PaginatedService<Shift>,
     @Inject(REQUEST) protected request: any,
   ) {
     super();
   }
 
-  async createRecord(dto: CreateRoasterDto): Promise<Roaster> {
+  async createRecord(dto: CreateShiftDto): Promise<Shift> {
     return super.createRecord({ ...dto });
   }
 
   async updateRecord(
-    optionsWhere: FindOptionsWhere<Roaster>,
-    dto: UpdateRoasterDto,
+    optionsWhere: FindOptionsWhere<Shift>,
+    dto: UpdateShiftDto,
   ) {
     return await super.updateRecord(optionsWhere, {
       ...dto,
     });
   }
 
-  get repository(): Repository<Roaster> {
+  get repository(): Repository<Shift> {
     return this._repository;
   }
 }

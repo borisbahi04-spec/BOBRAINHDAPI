@@ -30,6 +30,8 @@ import { Shift } from '../setting/shift.entity';
 import { Qashelling } from '../qashelling/qashelling.entity';
 import { Size } from '../setting/size.entity';
 import { size } from 'lodash';
+import { Equipment } from 'src/core/entities/setting/equipment.entity';
+import { User } from 'src/core/entities/user/user.entity';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
@@ -89,6 +91,15 @@ export class Roaster extends CoreEntity {
   })
   time: number;
 
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    required: true,
+    description: `Pression en Bar`,
+  })
+  @Column({ name: 'pression', nullable: false })
+  pression: number;
+
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'size_id', type: 'uuid', nullable: false })
@@ -102,6 +113,34 @@ export class Roaster extends CoreEntity {
   })
   @JoinColumn({ name: 'size_id' })
   size: Size;
+
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'operator_id', type: 'uuid', nullable: false })
+  operatorId: string;
+
+  @ApiProperty({ required: false, type: () => User })
+  @ManyToOne(() => User, (operator) => operator.roasters, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn({ name: 'operator_id' })
+  operator: User;
+
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'equipment_id', type: 'uuid', nullable: false })
+  equipmentId: string;
+
+  @ApiProperty({ required: false, type: () => Equipment })
+  @ManyToOne(() => Equipment, (equipment) => equipment.roasters, {
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn({ name: 'equipment_id' })
+  equipment: Equipment;
 
   @IsUUID()
   @IsNotEmpty()

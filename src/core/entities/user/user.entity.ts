@@ -3,13 +3,7 @@ import {
   ApiProperty,
   ApiPropertyOptional,
 } from '@nestjs/swagger';
-import {
-  Column,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import bcrypt from 'bcrypt';
 import { PersonCoreEntity } from '../base/person.core.entity';
 import { Branch } from '../subsidiary/branch.entity';
@@ -23,6 +17,8 @@ import {
   IsUUID,
 } from 'class-validator';
 import { AuthUser } from '../session/auth-user.entity';
+import { userTypeEnum } from 'src/core/definitions/enums';
+import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
 
 /**
  * Front office user
@@ -53,6 +49,11 @@ export class User extends PersonCoreEntity {
   @IsOptional()
   @Column({ name: 'role_id', type: 'uuid', nullable: true })
   roleId: string;
+
+  @IsString()
+  @IsOptional()
+  @Column({ name: 'type', nullable: true })
+  type: userTypeEnum;
 
   @ApiProperty({ type: 'object', description: `Rôle` })
   @ManyToOne(() => Role, {
@@ -94,6 +95,14 @@ export class User extends PersonCoreEntity {
   @JoinColumn({ name: 'last_access_id' })
   lastAccess: AuthUser;
 
+  @ApiProperty({
+    required: false,
+    type: () => [Roaster],
+  })
+  @OneToMany(() => Roaster, (roaster) => roaster.operator, {
+    cascade: true,
+  })
+  roasters: Roaster[];
   /**
    * Getters & Setters
    */

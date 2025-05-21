@@ -1,4 +1,4 @@
-import { CreateShiftDto } from 'src/core_factory/dto/setting/create-shift.dto';
+import { CreateShiftDto } from "src/core_factory/dto/setting/shift/create-shift.dto";
 
 // Default users
 export const getDefaultShifts = () => {

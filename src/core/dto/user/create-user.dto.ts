@@ -2,6 +2,7 @@ import { User } from '../../entities/user/user.entity';
 import { IsBoolean, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { BranchToUser } from 'src/core/entities/subsidiary/branch-to-user.entity';
+import { userTypeEnum } from 'src/core/definitions/enums';
 
 export class CreateUserDto extends PickType(User, [
   'username',
@@ -22,6 +23,10 @@ export class CreateUserDto extends PickType(User, [
   @IsOptional()
   @IsString()
   email: string;
+  @ApiPropertyOptional({  description: `type` })
+  @IsOptional()
+  @IsString()
+  type: userTypeEnum;
 
   @ApiPropertyOptional({ description: `est actives` })
   @IsOptional()

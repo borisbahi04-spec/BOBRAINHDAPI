@@ -30,34 +30,30 @@ import {
   AbilityActionEnum,
   AbilitySubjectEnum,
 } from 'src/core/definitions/enums';
-import { RoasterService } from 'src/core_factory/services/roaster/roaster.service';
-import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
 import { AuthUser } from 'src/core/entities/session/auth-user.entity';
-import { UpdateRoasterDto } from 'src/core_factory/dto/roaster/update-roaster.dto';
-import { CreateRoasterDto } from 'src/core_factory/dto/roaster/create-roaster.dto';
+import { CylinderTemperature } from 'src/core_factory/entities/setting/cylinder-temperature.entity';
+import { CylinderTemperatureService } from 'src/core_factory/services/setting/cylindertemperature/cylinder-temperature.service';
+import { CreateCylinderTemperatureDto } from 'src/core_factory/dto/setting/cylindertemperature/create-cylinder-temperature.dto';
+import { UpdateCylinderTemperatureDto } from 'src/core_factory/dto/setting/cylindertemperature/update-cylinder-temperature.dto';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
 @CustomApiErrorResponse()
-@ApiTags('roaster')
-@Controller('roaster')
-export class RoasterController {
-  constructor(private service: RoasterService) {}
-
-  /**
-   * Get paginated roaster list
-   */
+@ApiTags('cylindertemperature')
+@Controller('cylindertemperature')
+export class CylinderTemperatureController {
+  constructor(private service: CylinderTemperatureService) {}
   @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Roaster)
+  @CustomApiPaginatedResponse(CylinderTemperature)
   @Get()
   async findPaginated(
     @CurrentUser() authUser: AuthUser,
     @Query() query?: any,
-  ): Promise<Paginated<Roaster>> {
+  ): Promise<Paginated<CylinderTemperature>> {
     // Permission check
     await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
-      AbilitySubjectEnum.Product,
+      AbilitySubjectEnum.CylinderTemperature,
     );
 
     const options = buildFilterFromApiSearchParams(
@@ -72,14 +68,14 @@ export class RoasterController {
   }
 
   /**
-   * Get roaster by id
+   * Get cylindertemperature by id
    */
   @ApiSearchOneQueryFilter()
-  @Get(':roasterId')
+  @Get(':cylindertemperatureId')
   async findOne(
-    @Param('roasterId', ParseUUIDPipe) id: string,
+    @Param('cylindertemperatureId', ParseUUIDPipe) id: string,
     @Query() query?: any,
-  ): Promise<Roaster> {
+  ): Promise<CylinderTemperature> {
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,
@@ -92,15 +88,15 @@ export class RoasterController {
   }
 
   /**
-   * Create roaster
+   * Create cylindertemperature
    */
   @ApiSearchOneQueryFilter()
   @Post()
   async create(
-    @Body() dto: CreateRoasterDto,
+    @Body() dto: CreateCylinderTemperatureDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.createRecord(dto);
+  ): Promise<CylinderTemperature> {
+    const cylindertemperature = await this.service.createRecord(dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -109,21 +105,24 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id },
+      where: { ...options?.where, id: cylindertemperature.id },
     });
   }
 
   /**
-   * Update roaster
+   * Update cylindertemperature
    */
   @ApiSearchOneQueryFilter()
-  @Patch(':roasterId')
+  @Patch(':cylindertemperatureId')
   async update(
-    @Param('roasterId', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateRoasterDto,
+    @Param('cylindertemperatureId', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCylinderTemperatureDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.updateRecord({ id: id ?? '' }, dto);
+  ): Promise<CylinderTemperature> {
+    const cylindertemperature = await this.service.updateRecord(
+      { id: id ?? '' },
+      dto,
+    );
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -132,16 +131,16 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id ?? '' },
+      where: { ...options?.where, id: cylindertemperature.id ?? '' },
     });
   }
 
   /**
-   * Remove roaster
+   * Remove cylindertemperature
    */
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':roasterId')
-  async remove(@Param('roasterId', ParseUUIDPipe) id: string) {
+  @Delete(':cylindertemperatureId')
+  async remove(@Param('cylindertemperatureId', ParseUUIDPipe) id: string) {
     await this.service.deleteRecord({ id: id ?? '' });
     return;
   }

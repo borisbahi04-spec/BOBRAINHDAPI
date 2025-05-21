@@ -21,8 +21,9 @@ export class RoasterToSettingToCoocleaSpeed extends CoreEntity {
 
   @IsUUID()
   @IsNotEmpty()
+  @ApiProperty({ description: `roastertosetting du CylinderTemperature` })
   @Column({ name: 'roastertosetting_id', type: 'uuid', nullable: false })
-  roastertosetting_id: string;
+  roastertosettingId: string;
 
   @ApiProperty({ required: false, type: () => RoasterToSetting })
   @ManyToOne(
@@ -40,7 +41,7 @@ export class RoasterToSettingToCoocleaSpeed extends CoreEntity {
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'coocleaspeed_id', type: 'uuid', nullable: false })
-  coocleaspeed_id: string;
+  coocleaspeedId: string;
 
   @ApiProperty({ required: false, type: () => CoocleaSpeed })
   @ManyToOne(

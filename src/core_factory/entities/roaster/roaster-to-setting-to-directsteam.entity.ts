@@ -20,7 +20,7 @@ export class RoasterToSettingToDirectSteam extends CoreEntity {
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'roastertosetting_id', type: 'uuid', nullable: false })
-  roastertosetting_id: string;
+  roastertosettingId: string;
 
   @ApiProperty({ required: false, type: () => RoasterToSetting })
   @ManyToOne(
@@ -38,7 +38,7 @@ export class RoasterToSettingToDirectSteam extends CoreEntity {
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'directsteam_id', type: 'uuid', nullable: false })
-  directsteam_id: string;
+  directsteamId: string;
 
   @ApiProperty({ required: false, type: () => DirectSteam })
   @ManyToOne(

@@ -30,34 +30,30 @@ import {
   AbilityActionEnum,
   AbilitySubjectEnum,
 } from 'src/core/definitions/enums';
-import { RoasterService } from 'src/core_factory/services/roaster/roaster.service';
-import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
+import { Size } from 'src/core_factory/entities/setting/size.entity';
 import { AuthUser } from 'src/core/entities/session/auth-user.entity';
-import { UpdateRoasterDto } from 'src/core_factory/dto/roaster/update-roaster.dto';
-import { CreateRoasterDto } from 'src/core_factory/dto/roaster/create-roaster.dto';
+import { SizeService } from 'src/core_factory/services/setting/size/size.service';
+import { CreateSizeDto } from 'src/core_factory/dto/setting/create-size.dto';
+import { UpdateSizeDto } from 'src/core_factory/dto/setting/size/update-size.dto';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
 @CustomApiErrorResponse()
-@ApiTags('roaster')
-@Controller('roaster')
-export class RoasterController {
-  constructor(private service: RoasterService) {}
-
-  /**
-   * Get paginated roaster list
-   */
+@ApiTags('size')
+@Controller('size')
+export class SizeController {
+  constructor(private service: SizeService) {}
   @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Roaster)
+  @CustomApiPaginatedResponse(Size)
   @Get()
   async findPaginated(
     @CurrentUser() authUser: AuthUser,
     @Query() query?: any,
-  ): Promise<Paginated<Roaster>> {
+  ): Promise<Paginated<Size>> {
     // Permission check
     await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
-      AbilitySubjectEnum.Product,
+      AbilitySubjectEnum.Size,
     );
 
     const options = buildFilterFromApiSearchParams(
@@ -72,14 +68,14 @@ export class RoasterController {
   }
 
   /**
-   * Get roaster by id
+   * Get size by id
    */
   @ApiSearchOneQueryFilter()
-  @Get(':roasterId')
+  @Get(':sizeId')
   async findOne(
-    @Param('roasterId', ParseUUIDPipe) id: string,
+    @Param('sizeId', ParseUUIDPipe) id: string,
     @Query() query?: any,
-  ): Promise<Roaster> {
+  ): Promise<Size> {
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,
@@ -92,15 +88,15 @@ export class RoasterController {
   }
 
   /**
-   * Create roaster
+   * Create size
    */
   @ApiSearchOneQueryFilter()
   @Post()
   async create(
-    @Body() dto: CreateRoasterDto,
+    @Body() dto: CreateSizeDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.createRecord(dto);
+  ): Promise<Size> {
+    const size = await this.service.createRecord(dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -109,21 +105,21 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id },
+      where: { ...options?.where, id: size.id },
     });
   }
 
   /**
-   * Update roaster
+   * Update size
    */
   @ApiSearchOneQueryFilter()
-  @Patch(':roasterId')
+  @Patch(':sizeId')
   async update(
-    @Param('roasterId', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateRoasterDto,
+    @Param('sizeId', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateSizeDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.updateRecord({ id: id ?? '' }, dto);
+  ): Promise<Size> {
+    const size = await this.service.updateRecord({ id: id ?? '' }, dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -132,16 +128,16 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id ?? '' },
+      where: { ...options?.where, id: size.id ?? '' },
     });
   }
 
   /**
-   * Remove roaster
+   * Remove size
    */
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':roasterId')
-  async remove(@Param('roasterId', ParseUUIDPipe) id: string) {
+  @Delete(':sizeId')
+  async remove(@Param('sizeId', ParseUUIDPipe) id: string) {
     await this.service.deleteRecord({ id: id ?? '' });
     return;
   }

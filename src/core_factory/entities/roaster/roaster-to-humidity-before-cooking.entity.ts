@@ -45,7 +45,7 @@ export class RoasterToHumidityBeforeCooking extends CoreEntity {
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'roaster_id', type: 'uuid', nullable: false })
-  roaster_id: string;
+  roasterId: string;
 
   @ApiProperty({ required: false, type: () => Roaster })
   @ManyToOne(

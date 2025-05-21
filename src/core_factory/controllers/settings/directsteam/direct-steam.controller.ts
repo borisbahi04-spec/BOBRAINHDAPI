@@ -30,34 +30,30 @@ import {
   AbilityActionEnum,
   AbilitySubjectEnum,
 } from 'src/core/definitions/enums';
-import { RoasterService } from 'src/core_factory/services/roaster/roaster.service';
-import { Roaster } from 'src/core_factory/entities/roaster/roaster.entity';
 import { AuthUser } from 'src/core/entities/session/auth-user.entity';
-import { UpdateRoasterDto } from 'src/core_factory/dto/roaster/update-roaster.dto';
-import { CreateRoasterDto } from 'src/core_factory/dto/roaster/create-roaster.dto';
+import { DirectSteamService } from 'src/core_factory/services/setting/directsteam/direct-steam.service';
+import { DirectSteam } from 'src/core_factory/entities/setting/direct-steam.entity';
+import { UpdateDirectSteamDto } from 'src/core_factory/dto/setting/directsteam/update-direct-steam.dto';
+import { CreateDirectSteamDto } from 'src/core_factory/dto/setting/directsteam/create-direct-steam.dto';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
 @CustomApiErrorResponse()
-@ApiTags('roaster')
-@Controller('roaster')
-export class RoasterController {
-  constructor(private service: RoasterService) {}
-
-  /**
-   * Get paginated roaster list
-   */
+@ApiTags('directsteam')
+@Controller('directsteam')
+export class DirectSteamController {
+  constructor(private service: DirectSteamService) {}
   @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Roaster)
+  @CustomApiPaginatedResponse(DirectSteam)
   @Get()
   async findPaginated(
     @CurrentUser() authUser: AuthUser,
     @Query() query?: any,
-  ): Promise<Paginated<Roaster>> {
+  ): Promise<Paginated<DirectSteam>> {
     // Permission check
     await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
-      AbilitySubjectEnum.Product,
+      AbilitySubjectEnum.DirectSteam,
     );
 
     const options = buildFilterFromApiSearchParams(
@@ -72,14 +68,14 @@ export class RoasterController {
   }
 
   /**
-   * Get roaster by id
+   * Get directsteam by id
    */
   @ApiSearchOneQueryFilter()
-  @Get(':roasterId')
+  @Get(':directsteamId')
   async findOne(
-    @Param('roasterId', ParseUUIDPipe) id: string,
+    @Param('directsteamId', ParseUUIDPipe) id: string,
     @Query() query?: any,
-  ): Promise<Roaster> {
+  ): Promise<DirectSteam> {
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,
@@ -92,15 +88,15 @@ export class RoasterController {
   }
 
   /**
-   * Create roaster
+   * Create directsteam
    */
   @ApiSearchOneQueryFilter()
   @Post()
   async create(
-    @Body() dto: CreateRoasterDto,
+    @Body() dto: CreateDirectSteamDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.createRecord(dto);
+  ): Promise<DirectSteam> {
+    const directsteam = await this.service.createRecord(dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -109,21 +105,21 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id },
+      where: { ...options?.where, id: directsteam.id },
     });
   }
 
   /**
-   * Update roaster
+   * Update directsteam
    */
   @ApiSearchOneQueryFilter()
-  @Patch(':roasterId')
+  @Patch(':directsteamId')
   async update(
-    @Param('roasterId', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateRoasterDto,
+    @Param('directsteamId', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDirectSteamDto,
     @Query() query?: any,
-  ): Promise<Roaster> {
-    const roaster = await this.service.updateRecord({ id: id ?? '' }, dto);
+  ): Promise<DirectSteam> {
+    const directsteam = await this.service.updateRecord({ id: id ?? '' }, dto);
 
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
@@ -132,16 +128,16 @@ export class RoasterController {
 
     return this.service.readOneRecord({
       ...options,
-      where: { ...options?.where, id: roaster.id ?? '' },
+      where: { ...options?.where, id: directsteam.id ?? '' },
     });
   }
 
   /**
-   * Remove roaster
+   * Remove directsteam
    */
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Delete(':roasterId')
-  async remove(@Param('roasterId', ParseUUIDPipe) id: string) {
+  @Delete(':directsteamId')
+  async remove(@Param('directsteamId', ParseUUIDPipe) id: string) {
     await this.service.deleteRecord({ id: id ?? '' });
     return;
   }

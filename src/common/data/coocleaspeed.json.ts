@@ -1,5 +1,5 @@
 import { CoocleaSpeedEnum } from 'src/core_factory/definitions/enums';
-import { CreateCoocleaSpeedDto } from 'src/core_factory/dto/setting/create-cooclea-speed.dto';
+import { CreateCoocleaSpeedDto } from 'src/core_factory/dto/setting/coocleaspeed/create-cooclea-speed.dto';
 
 // Default users
 export const getDefaultCoocleaSpeeds = () => {

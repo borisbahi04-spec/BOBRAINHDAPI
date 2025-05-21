@@ -8,11 +8,11 @@ export enum SizeLevelEnum {
 }
 
 export enum SizeNameEnum {
-  N18 = 'A<18',
-  N1820 = 'B18-20',
+  N18 = 'E<18',
+  N1820 = 'D18-20',
   N2022 = 'C20-22',
-  N2224 = 'D22-24',
-  N24 = 'E>24',
+  N2224 = 'B22-24',
+  N24 = 'A>24',
 }
 
 export enum CashewStageEnum {

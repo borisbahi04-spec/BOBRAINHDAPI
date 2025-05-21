@@ -42,6 +42,18 @@ import { QapeelingToPeeledKernel } from './entities/qapeeling/qapeeling-to-peele
 import { RoasterController } from './controllers/roaster/roaster.controller';
 import { RoasterService } from './services/roaster/roaster.service';
 import { RoasterSubscriber } from './services/roaster/roaster.subscriber';
+import { ShiftController } from './controllers/settings/shift/shift.controller';
+import { ShiftService } from './services/setting/shift/shift.service';
+import { SizeService } from './services/setting/size/size.service';
+import { SizeController } from './controllers/settings/size/size.controller';
+import { StackService } from './services/stack/stack.service';
+import { StackController } from './controllers/stack/stack.controller';
+import { CoocleaSpeedService } from './services/setting/coocleaspeed/cooclea-speed.service';
+import { CoocleaSpeedController } from './controllers/settings/coocleaspeed/cooclea-speed.controller';
+import { CylinderTemperatureService } from './services/setting/cylindertemperature/cylinder-temperature.service';
+import { CylinderTemperatureController } from './controllers/settings/cylindertemperature/cylinder-temperature.controller';
+import { DirectSteamService } from './services/setting/directsteam/direct-steam.service';
+import { DirectSteamController } from './controllers/settings/directsteam/direct-steam.controller';
 
 @Module({
   imports: [
@@ -85,8 +97,26 @@ import { RoasterSubscriber } from './services/roaster/roaster.subscriber';
       Line,
     ]),
   ],
-  controllers: [RoasterController],
-  providers: [DefaultDataService, RoasterService, RoasterSubscriber],
+  controllers: [
+    ShiftController,
+    SizeController,
+    CoocleaSpeedController,
+    StackController,
+    RoasterController,
+    CylinderTemperatureController,
+    DirectSteamController
+  ],
+  providers: [
+    DefaultDataService,
+    ShiftService,
+    SizeService,
+    StackService,
+    CoocleaSpeedService,
+    RoasterService,
+    CylinderTemperatureService,
+    DirectSteamService,
+    RoasterSubscriber,
+  ],
   exports: [],
 })
 export class CoreFactoryModule implements OnApplicationBootstrap {
