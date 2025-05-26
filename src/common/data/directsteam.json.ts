@@ -1,5 +1,5 @@
 import { DirectSteamEnum } from 'src/core_factory/definitions/enums';
-import { CreateDirectSteamDto } from 'src/core_factory/dto/setting/create-direct-steam.dto';
+import { CreateDirectSteamDto } from 'src/core_factory/dto/setting/directsteam/create-direct-steam.dto';
 
 // Default users
 export const getDefaultDirectSteams = () => {

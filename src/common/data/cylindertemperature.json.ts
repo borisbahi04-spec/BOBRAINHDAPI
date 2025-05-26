@@ -1,5 +1,5 @@
 import { CylinderTemperatureEnum } from 'src/core_factory/definitions/enums';
-import { CreateCylinderTemperatureDto } from 'src/core_factory/dto/setting/create-cylinder-temperature.dto';
+import { CreateCylinderTemperatureDto } from 'src/core_factory/dto/setting/cylindertemperature/create-cylinder-temperature.dto';
 
 // Default users
 export const getDefaultCylinderTemperatures = () => {

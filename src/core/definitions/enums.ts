@@ -50,6 +50,7 @@ export enum AbilitySubjectEnum {
   CoocleaSpeed = 'CoocleaSpeed',
   CylinderTemperature = 'CylinderTemperature',
   DirectSteam = 'DirectSteam',
+  CashewStage = 'CashewStage',
 }
 
 export enum AbilityActionEnum {

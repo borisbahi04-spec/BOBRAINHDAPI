@@ -54,6 +54,8 @@ import { CylinderTemperatureService } from './services/setting/cylindertemperatu
 import { CylinderTemperatureController } from './controllers/settings/cylindertemperature/cylinder-temperature.controller';
 import { DirectSteamService } from './services/setting/directsteam/direct-steam.service';
 import { DirectSteamController } from './controllers/settings/directsteam/direct-steam.controller';
+import { CashewStageService } from './services/setting/cashewstage/cashew-stage.service';
+import { CashewStageController } from './controllers/settings/cashewstage/cashew-stage.controller';
 
 @Module({
   imports: [
@@ -104,7 +106,8 @@ import { DirectSteamController } from './controllers/settings/directsteam/direct
     StackController,
     RoasterController,
     CylinderTemperatureController,
-    DirectSteamController
+    DirectSteamController,
+    CashewStageController,
   ],
   providers: [
     DefaultDataService,
@@ -115,6 +118,7 @@ import { DirectSteamController } from './controllers/settings/directsteam/direct
     RoasterService,
     CylinderTemperatureService,
     DirectSteamService,
+    CashewStageService,
     RoasterSubscriber,
   ],
   exports: [],

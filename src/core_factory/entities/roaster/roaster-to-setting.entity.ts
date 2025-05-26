@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 
 import { instanceToPlain } from 'class-transformer';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 import { CoreEntity } from 'src/core/entities/base/core.entity';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 import { Roaster } from './roaster.entity';
@@ -14,15 +14,6 @@ import { RoasterToSettingToDirectSteam } from './roaster-to-setting-to-directste
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },
 })
 export class RoasterToSetting extends CoreEntity {
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty({
-    required: true,
-    description: `Pression en Bar`,
-  })
-  @Column({ name: 'pression', nullable: false })
-  pression: number;
-
   @IsUUID()
   @IsNotEmpty()
   @Column({ name: 'roaster_id', type: 'uuid', nullable: false })
