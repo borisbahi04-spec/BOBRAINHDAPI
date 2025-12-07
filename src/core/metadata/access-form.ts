@@ -1,5 +1,4 @@
 import { YesNoActionEnum } from '../definitions/enums';
-import { Product } from '../entities/product/product.entity';
 import { Branch } from '../entities/subsidiary/branch.entity';
 import { User } from '../entities/user/user.entity';
 
@@ -38,8 +37,5 @@ export const getAccessFieldTableForm = () => {
   return {
     User: User.getRepository().metadata.columns.map((e) => e.propertyName),
     Branch: Branch.getRepository().metadata.columns.map((e) => e.propertyName),
-    Product: Product.getRepository().metadata.columns.map(
-      (e) => e.propertyName,
-    ),
   };
 };

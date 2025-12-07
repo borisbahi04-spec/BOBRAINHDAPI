@@ -34,12 +34,6 @@ import { Branch } from '../../entities/subsidiary/branch.entity';
 import { UserService } from '../../services/user/user.service';
 import { CreateBranchDto } from '../../dto/subsidiary/create-branch.dto';
 import { UpdateBranchDto } from '../../dto/subsidiary/update-branch.dto';
-import { BranchToProductService } from '../../services/subsidiary/branch-to-product.service';
-import { BranchToProduct } from '../../entities/subsidiary/branch-to-product.entity';
-import { Order } from '../../entities/stockmanagement/order.entity';
-//import { OrderService } from '../../services/supply/order.service';
-//import { SaleService } from '../../services/selling/sale.service';
-//import { Sale } from '../../entities/selling/sale.entity';
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
@@ -50,9 +44,6 @@ export class BranchController {
   constructor(
     private service: BranchService,
     private userService: UserService,
-    private branchToProductService: BranchToProductService,
-    //private orderService: OrderService,
-    //private saleService: SaleService,
   ) {}
 
   /**
@@ -238,118 +229,4 @@ export class BranchController {
       },
     });
   }
-
-  /**
-   * Get paginated branch products
-   */
-  @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(BranchToProduct)
-  @Get(':branchId/product')
-  async findProducts(
-    @CurrentUser() authUser: AuthUser,
-    @Param('branchId', ParseUUIDPipe) id: string,
-    @Query() query?: any,
-  ): Promise<Paginated<BranchToProduct>> {
-    // Permission check
-    await authUser?.throwUnlessCan(
-      AbilityActionEnum.read,
-      AbilitySubjectEnum.User,
-    );
-
-    const branch = await this.service.readOneRecord({
-      where: { id: id ?? '' },
-    });
-
-    const options = buildFilterFromApiSearchParams(
-      this.branchToProductService.repository,
-      query as ApiSearchParamOptions,
-      {
-        textFilterFields: ['product.reference', 'product.displayName'],
-      },
-    );
-
-    return this.branchToProductService.readPaginatedListRecord({
-      ...options,
-      where: {
-        ...options?.where,
-        branchId: branch.id || '',
-      },
-    });
-  }
-
-  /**
-   * Get paginated branch orders
-   */
- /* @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Order)
-  @Get(':branchId/order')
-  async findOrders(
-    @CurrentUser() authUser: AuthUser,
-    @Param('branchId', ParseUUIDPipe) id: string,
-    @Query() query?: any,
-  ): Promise<Paginated<Order>> {
-    // Permission check
-    await authUser?.throwUnlessCan(
-      AbilityActionEnum.read,
-      AbilitySubjectEnum.Order,
-    );
-
-    const branch = await this.service.readOneRecord({
-      where: { id: id ?? '' },
-    });
-
-   const options = buildFilterFromApiSearchParams(
-      this.orderService.repository,
-      query as ApiSearchParamOptions,
-      {
-        textFilterFields: ['reference', 'title'],
-      },
-    );
-
-    return this.orderService.readPaginatedListRecord({
-      ...options,
-      where: {
-        ...options?.where,
-        branchId: branch.id || '',
-      },
-    });
-  }*/
-
-  /**
-   * Get paginated branch sales
-   */
- /* @ApiSearchQueryFilter()
-  @CustomApiPaginatedResponse(Sale)
-  @Get(':branchId/sale')
-  async findSales(
-    @CurrentUser() authUser: AuthUser,
-    @Param('branchId', ParseUUIDPipe) id: string,
-    @Query() query?: any,
-  ): Promise<Paginated<Sale>> {
-    // Permission check
-    await authUser?.throwUnlessCan(
-      AbilityActionEnum.read,
-      AbilitySubjectEnum.Sale,
-    );
-
-    const branch = await this.service.readOneRecord({
-      where: { id: id ?? '' },
-    });
-
-   /* const options = buildFilterFromApiSearchParams(
-      this.saleService.repository,
-      query as ApiSearchParamOptions,
-      {
-        textFilterFields: ['reference'],
-      },
-    );*/
-
-    /*return this.saleService.readPaginatedListRecord({
-      ...options,
-      where: {
-        ...options?.where,
-        branchId: branch.id || '',
-      },
-    });
-  }*/
 }

@@ -35,6 +35,20 @@ export class BaseCoreEntity extends BaseEntity {
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt: Date;
 
+  @ApiProperty({
+    description: 'La date de cloture ',
+    required: false,
+  })
+  @DeleteDateColumn({ name: 'closed_at', nullable: true })
+  closedAt: Date;
+
+  @ApiProperty({
+    description: 'La date de lancement ',
+    required: false,
+  })
+  @DeleteDateColumn({ name: 'released_at', nullable: true })
+  releasedAt: Date;
+
   @ApiPropertyOptional()
   @Column({
     name: 'created_by_id',

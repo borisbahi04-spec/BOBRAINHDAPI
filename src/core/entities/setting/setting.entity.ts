@@ -1,15 +1,8 @@
 import { Column, Entity, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsIn,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { CoreEntity } from '../base/core.entity';
 import { instanceToPlain } from 'class-transformer';
-import { SettingTypeEnum } from 'src/core/definitions/enums';
 
 @Entity({
   orderBy: { createdAt: 'DESC', updatedAt: 'DESC' },

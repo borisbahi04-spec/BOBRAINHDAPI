@@ -5,52 +5,28 @@ import {
   getDefaultAccesss,
   getDefaultRoles,
   getDefaultUsers,
-  getDefaultFeatures,
 } from 'src/common';
 import { Branch } from '../../entities/subsidiary/branch.entity';
 import { User } from '../../entities/user/user.entity';
 import { isEmpty } from 'lodash';
 import { Access } from 'src/core/entities/user/access.entity';
 import { AccessTypeEnum } from 'src/core/definitions/enums';
-import { Feature } from 'src/core/entities/setting/feature.entity';
-import { Dining } from 'src/core/entities/setting/dining.entity';
-import { getDefaultDinings } from 'src/common/data/dining.json';
-import { BranchToDining } from 'src/core/entities/subsidiary/branch-to-dining.entity';
-import { Loyalty } from 'src/core/entities/setting/loyalty.entity';
-import { getDefaultLoyalty } from 'src/common/data/loyalty.json';
 import { Setting } from 'src/core/entities/setting/setting.entity';
 import { getDefaultSettings } from 'src/common/data/setting.json';
-import { Reason } from 'src/core/entities/stockmanagement/reason.entity';
-import { getDefaultReasons } from 'src/common/data/reason.json';
-import { Section } from 'src/core/entities/setting/section.entity';
-import { getDefaultSections } from 'src/common/data/section.json';
-import { EquipmentType } from 'src/core/entities/setting/equipment-type.entity';
-import { getDefaultEquipmentTypes } from 'src/common/data/equipmenttype.json';
 
 @Injectable()
 export class DefaultDataService {
   async createDefaultData() {
-    const settings = await this.createSettingsDefaultData();
-    const sections = await this.createSectionsDefaultData();
     const branches = await this.createBranchesDefaultData();
     const acccess = await this.createAccessDefaultData();
     const roles = await this.createRolesDefaultData();
     const users = await this.createUsersDefaultData();
-    const reasons = await this.createReasonsDefaultData();
-    const equipmentTypes = await this.createEquipmentTypesDefaultData();
 
     return {
-      //features: features.length,
       branches: branches.length,
-      sections: sections.length,
-      equipmentTypes: equipmentTypes.length,
-      //dinings: dinings.length,
-      //loyalties: loyalties.length,
       acccess: acccess.length,
       roles: roles.length,
       users: users.length,
-      settings: settings.length,
-      reasons: reasons.length,
     };
   }
 
@@ -67,72 +43,6 @@ export class DefaultDataService {
     return branches;
   }
 
-  async createDiningsDefaultData(): Promise<Dining[]> {
-    const defaultDinings = getDefaultDinings();
-    const dinings: Dining[] = [];
-    let exists: number;
-    const listBranches = await Branch.find();
-    for (const dto of defaultDinings) {
-      exists = await Dining.countBy({ displayName: dto.displayName });
-      if (exists <= 0) {
-        const _dining = await Dining.save(dto as Dining);
-        if (_dining) {
-          for (const br of listBranches) {
-            const _eexists = await BranchToDining.countBy({
-              diningId: _dining.id,
-              branchId: br.id,
-            });
-            if (_eexists <= 0) {
-              let isDefault = false;
-              if (_dining.displayName == process.env.DEFAULTDINING) {
-                isDefault = true;
-              }
-              await BranchToDining.save({
-                diningId: _dining.id,
-                branchId: br.id,
-                isAvailable: true,
-                isDefault: isDefault,
-              });
-            }
-          }
-        }
-        dinings.push(_dining);
-      }
-    }
-    return dinings;
-  }
-
-  async createLoyaltyDefaultData(): Promise<Loyalty[]> {
-    const defaultLoyalty = getDefaultLoyalty();
-    const loyalty: Loyalty[] = [];
-    let exists: number;
-    for (const dto of defaultLoyalty) {
-      exists = await Loyalty.countBy({ uniqueName: dto.uniqueName });
-      if (exists <= 0) {
-        const _loyalty = await Loyalty.save(dto as Loyalty);
-        loyalty.push(_loyalty);
-      }
-    }
-    return loyalty;
-  }
-
-  async createFeaturesDefaultData(): Promise<Feature[]> {
-    const defaultFeatures = getDefaultFeatures();
-    const features: Feature[] = [];
-    let exists: number;
-    for (const dto of defaultFeatures) {
-      exists = await Feature.countBy({
-        displayName: dto.displayName,
-        pseudoName: dto.pseudoName,
-        description: dto.description,
-      });
-      if (exists <= 0) {
-        features.push(await Feature.save(dto as Feature));
-      }
-    }
-    return features;
-  }
-
   async createSettingsDefaultData(): Promise<Setting[]> {
     const defaultSettings = getDefaultSettings();
     const settings: Setting[] = [];
@@ -147,55 +57,6 @@ export class DefaultDataService {
       }
     }
     return settings;
-  }
-
-  async createSectionsDefaultData(): Promise<Section[]> {
-    const defaultSections = getDefaultSections();
-    const sections: Section[] = [];
-    let exists: number;
-    for (const dto of defaultSections) {
-      exists = await Section.countBy({
-        name: dto.name,
-        displayName: dto.displayName,
-      });
-      if (exists <= 0) {
-        sections.push(await Section.save(dto as Section));
-      }
-    }
-    return sections;
-  }
-
-  async createEquipmentTypesDefaultData(): Promise<EquipmentType[]> {
-    const defaultSections = getDefaultEquipmentTypes();
-    const equipmentTypes: EquipmentType[] = [];
-    let exists: number;
-    for (const dto of defaultSections) {
-      exists = await EquipmentType.countBy({
-        name: dto.name,
-        displayName: dto.displayName,
-      });
-      if (exists <= 0) {
-        equipmentTypes.push(await EquipmentType.save(dto as EquipmentType));
-      }
-    }
-    return equipmentTypes;
-  }
-
-  async createReasonsDefaultData(): Promise<Reason[]> {
-    const defaultReasons = getDefaultReasons();
-    const reasons: Reason[] = [];
-    let exists: number;
-    for (const dto of defaultReasons) {
-      exists = await Reason.countBy({
-        name: dto.name,
-        displayName: dto.displayName,
-        position: dto.position,
-      });
-      if (exists <= 0) {
-        reasons.push(await Reason.save(dto as Reason));
-      }
-    }
-    return reasons;
   }
 
   private async createAccessDefaultData(): Promise<Access[]> {
@@ -294,7 +155,6 @@ export class DefaultDataService {
     const roles = await Role.findBy({ name: AccessTypeEnum.owner });
 
     const users: User[] = await User.findBy({});
-    console.log('logggedUser2222', users);
     if (users.length > 0 || branches.length <= 0 || roles.length <= 0) {
       return [];
     }
@@ -307,6 +167,7 @@ export class DefaultDataService {
         if (!isEmpty(dto.newPassword)) {
           await user.setNewPassword(dto.newPassword);
         }
+        console.log('titi46565',branches[0]);
         users.push(
           await User.save({
             ...user,

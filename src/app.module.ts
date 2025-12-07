@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { configs } from './config';
@@ -27,7 +28,7 @@ import { diskStorage } from 'multer';
 import { Scope, Module } from '@nestjs/common';
 import { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { CoreFactoryModule } from './core_factory/core_factory.module';
+import { GatewayModule } from './gateway/gateway.module';
 
 @Module({
   imports: [
@@ -59,11 +60,13 @@ import { CoreFactoryModule } from './core_factory/core_factory.module';
       isGlobal: true,
     }),
     { module: CoreModule, global: true },
-    { module: CoreFactoryModule, global: true },
+    /*{ module: CoreFactoryModule, global: true },*/
     { module: AuthModule, global: true },
     { module: MailModule, global: true },
     { module: PaginationModule, global: true },
+    { module: GatewayModule, global: true },
 
+    
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads',

@@ -12,6 +12,12 @@
         }
       }
     ],
+    "assets": [
+      {
+        "include": "src/templates/**/*",
+        "outDir": "dist/templates"
+      }
+    ],
     "webpack": true
   },
   "projects": {

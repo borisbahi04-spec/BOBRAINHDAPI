@@ -27,4 +27,19 @@ export class CoreEntity extends BaseCoreEntity {
   })
   @JoinColumn({ name: 'deleted_by_id' })
   deletedBy: AuthUser;
+
+  @ApiPropertyOptional({ type: 'object' })
+  @ManyToOne(() => AuthUser, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'closed_by_id' })
+  closedBy: AuthUser;
+  @ApiPropertyOptional({ type: 'object' })
+  @ManyToOne(() => AuthUser, {
+    nullable: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({ name: 'released_by_id' })
+  releasedBy: AuthUser;
 }

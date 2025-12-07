@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { PaginatedService } from '@app/typeorm';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { REQUEST_AUTH_USER_KEY } from 'src/modules/auth/definitions/constants';
@@ -11,6 +12,8 @@ import {
 import { AuthUser } from '../entities/session/auth-user.entity';
 import { BaseCoreEntity } from '../entities/base/base.core.entity';
 import * as dns from 'dns';
+import moment from 'moment';
+
 
 export abstract class AbstractService<T extends BaseCoreEntity> {
   abstract NOT_FOUND_MESSAGE: string;
@@ -156,4 +159,112 @@ export abstract class AbstractService<T extends BaseCoreEntity> {
     }
     return result;
   }
+
+  public isWithinMargin(
+    real: number,
+    expected: number,
+    tolerance = 5,
+  ): boolean {
+    const delta = Math.abs(real - expected);
+    return delta <= tolerance;
+  }
+
+  public averageArrayItemByKernel(itemKernels = [], kernelName) {
+    const filtered = itemKernels?.filter(
+      (item) => item.cashewStage?.displayName === kernelName,
+    );
+    if (filtered?.length === 0) return 0;
+    const total = filtered?.reduce((sum, item) => sum + (item.value || 0), 0);
+    return total / filtered?.length;
+  }
+
+    public averageArrayItemByRoasterItem(itemRoasterItems = [], roasterItemName) {
+    const filtered = itemRoasterItems?.filter(
+      (item) => item.roasterItem?.displayName === roasterItemName,
+    );
+    if (filtered?.length === 0) return 0;
+    const total = filtered?.reduce((sum, item) => sum + (item.value || 0), 0);
+    return total / filtered?.length;
+  }
+
+  public pourcentageItem(value = 0, total = 0): number {
+    if (total === 0) return 0;
+    return Math.round((value / total) * 1000) / 10; // arrondi à 2 décimales
+  }
+
+  validateChildrenDatesAfterParentEnd(
+    parentEnd: Date,
+    children: { startdate: Date; enddate: Date }[],
+  ): boolean {
+    return children.every((child) => {
+      return (
+        new Date(child.startdate) > new Date(parentEnd) &&
+        new Date(child.enddate) > new Date(parentEnd)
+      );
+    });
+  }
+
+  public averageArrayItemByGender(itemGenders = [], genderName) {
+    const filtered = itemGenders?.filter(
+      (item) => item.gender?.displayName === genderName,
+    );
+    if (filtered?.length === 0) return 0;
+    const total = filtered?.reduce((sum, item) => sum + (item.value || 0), 0);
+    return total / filtered?.length;
+  }
+
+  validateChildrenDateHasOverlappingIntervals(
+    intervals: { id?: string; startdate: Date; enddate: Date }[],
+  ): boolean {
+    const sorted = intervals
+      .map((i) => ({
+        ...i,
+        start: new Date(i.startdate).getTime(),
+        end: new Date(i.enddate).getTime(),
+      }))
+      .sort((a, b) => a.start - b.start);
+
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i].end > sorted[i + 1].start) {
+        return true; // chevauchement détecté
+      }
+    }
+
+    return false;
+  }
+
+  calculateHourDifference(start: string | Date, end: string | Date): number {
+    const startTime = moment(start);
+    const endTime = moment(end);
+
+    if (!startTime.isValid() || !endTime.isValid()) {
+      throw new Error('Invalid date format');
+    }
+
+    const duration = moment.duration(endTime.diff(startTime));
+    const hours = duration.asHours(); // résultat en heures décimales
+
+    return parseFloat(hours.toFixed(2)); // ex: 5.75
+  }
+
+  calculateMinuteDifference(start: string | Date, end: string | Date): number {
+    const startTime = moment(start);
+    const endTime = moment(end);
+
+    if (!startTime.isValid() || !endTime.isValid()) {
+      throw new Error('Invalid date format');
+    }
+
+    const duration = moment.duration(endTime.diff(startTime));
+    const hours = duration.asHours() * 60; // résultat en heures décimales
+
+    return parseFloat(hours.toFixed(2)); // ex: 5.75
+  }
+
+
+
+ 
+
+  
+
 }

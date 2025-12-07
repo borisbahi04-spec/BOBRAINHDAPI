@@ -4,8 +4,8 @@ import { CreateBranchDto } from 'src/core/dto/subsidiary/create-branch.dto';
 export const getDefaultBranches = () => {
   return <CreateBranchDto[]>[
     {
-      displayName: 'Maison mère',
-      city: 'Abidjan',
+      displayName: 'DekelOil',
+      city: 'Aboisso',
       isActive: true,
       isParentCompany: true,
     },
