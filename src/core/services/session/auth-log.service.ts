@@ -39,8 +39,8 @@ export class AuthLogService {
     authMethod: AuthLogAuthMethodEnum,
     username: string,
   ): Promise<void> {
-    const application = request[REQUEST_APP_KEY] as Application;
-    const limit = this.configService.get<number>(
+    /*const application = request[REQUEST_APP_KEY] as Application;
+     const limit = this.configService.get<number>(
       'security.auth_throttle_limit',
       5,
     );
@@ -54,10 +54,10 @@ export class AuthLogService {
       createdAt: MoreThanOrEqual(ttlDate.toDate()),
     });
 
-    if (attemptsCount >= limit) {
+   if (attemptsCount >= limit) {
       throw new UnauthorizedException(
         `Vous avez atteint le nombre maximum d'essai. Veuillez réessayer plus tard`,
       );
-    }
+    }*/
   }
 }
