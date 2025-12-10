@@ -13,10 +13,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Flash } from 'src/core/entities/flash/flash.entity';
-import { FlashService } from 'src/core/services/flash/flash.service';
 import axios from 'axios';
 import { io, Socket as ClientSocket } from 'socket.io-client';
-import * as jwt from 'jsonwebtoken';
 import { Logger4jsService } from '@app/nestjs';
 import { Inject } from '@nestjs/common';
 
@@ -27,23 +25,21 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private erpSocket: ClientSocket | null = null;
   private erpToken: string | null = null;
 
-  private readonly ERP_AUTH_URL = process.env.ERP_AUTH_URL ?? 'http://localhost:3335/bobrain-backend/api/v1/auth/login';
-  private readonly ERP_WS_URL = process.env.ERP_WS_URL ?? 'http://localhost:3335/ws';
-  private readonly ERP_LOGIN = process.env.ERP_LOGIN;
-  private readonly ERP_PASSWORD = process.env.ERP_PASSWORD;
+  private  ERP_AUTH_URL: string='http://localhost:3335/posgpt-backend/api/v1/auth/login';
+  private  ERP_WS_URL: string='http://localhost:3335/ws'
+  private  ERP_LOGIN: string='admin';
+  private  ERP_PASSWORD: string='admin';
+
   private readonly JWT_SECRET = process.env.JWT_SECRET; // remplace par ton secret en prod
  
   @Inject(Logger4jsService)
   private logger: Logger4jsService;
 
-  constructor(protected flashService: FlashService) {
-//this.logger.setContext(SocketGateway.name);
 
-  }
 
   afterInit(server: Server) {
-    //console.info('Gateway initialized');
-
+      console.log('zzvvvvvv56565', process.env.ERP_AUTH_URL);
+      
     // Middleware handshake: validate token existance & optionally JWT
     server.use((socket: any, next) => {
       try {
@@ -55,8 +51,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
         // Exemple de validation JWT : décommenter si tu utilises JWT
         try {
           //const payload = jwt.verify(token, this.JWT_SECRET);
-          console.log('zzvvvvvv56565', token);
-          //console.log('Handshake25555:', payload);
+         
 
           //socket.data.user = payload; // stocker l'info utilisateur sur le socket
           socket.data.token = token;
@@ -84,16 +79,14 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     // on démarre une tentative de connexion au ERP si nécessaire (async fire-and-forget)
     if (!this.erpSocket || !this.erpSocket.connected) {
       this.connectToErp().catch((e) => {
-        //console.error('Impossible de se connecter immédiatement à l’ERP: ' + e.message);
           console.error('Impossible de se connecter immédiatement à l’ERP: ' + e.message);
       });
     }
   }
+  
 
   handleDisconnect(client: Socket) {
-    //console.info(`Client disconnected: ${client.id}`);
     console.info(`Client disconnected: ${client.id}`);
-
   }
 
   // ---------- MAIN EVENT: receive weight ----------
@@ -118,10 +111,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       }
       // vérification optionnelle du token message (si client envoie token dans data)
       const token = (pload && pload.auth_token) ? pload.auth_token : client.data?.token;
-      console.log('Parsed payload78:',pload);
 
       // 1) sauvegarde et forwarding
       const saved = await this.saveAndForward(pload.payload, token, client);
+
       if(saved && pload.payload.station){
         this.purgeOld(pload.payload.station, 1);
       }
@@ -139,61 +132,62 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   // ---------- Exemple de sauvegarde + forward (adapter selon ta DB/service) ----------
-  private async saveAndForward(payload: any, token: string | null, client: Socket) {
-    console.log('saveAndForward démarré');
+private async saveAndForward(payload: any, token: string , client: Socket) {
+  console.log('saveAndForward démarré');
 
-    // 1) Sauvegarde locale via ton entity (Flash.save attend un objet JS)
-    //    Ton code original faisait: const saved = await Flash.save(JSON.parse(data));
-    //    Ici on s'attend à recevoir un objet
-    let saved;
-    try {
-      // Si tu utilises ton service: await this.flashService.createRecord(payload);
+  // 1) Sauvegarde locale via ton entity (Flash.save attend un objet JS)
+  //    Ton code original faisait: const saved = await Flash.save(JSON.parse(data));
+  //    Ici on s'attend à recevoir un objet
+  let saved;
+  try {
+    // Si tu utilises ton service: await this.flashService.createRecord(payload);
 
-      if (typeof payload === 'string') {
-        payload = JSON.parse(payload);
-      }
-      
-
-      saved = await Flash.save(payload); // garde ton usage existant
-      //console.log('Enregistrement Flash OK id=' + saved?.id);
-      console.log('Enregistrement Flash OK id=' + saved?.id);
-    } catch (dbErr) {
-      //console.error('Erreur sauvegarde Flash: ' + dbErr.message);
-      console.error('Erreur sauvegarde Flash: ' + dbErr.message);
-      throw dbErr;
+    if (typeof payload === 'string') {
+      payload = JSON.parse(payload);
     }
+    
 
-    // 2) Forward vers ERP (si nécessaire) — non bloquant mais on peut tenter
-    try {
-      // Si tu as besoin du token ERP, vérifie s'il est disponible, sinon tente une auth
-      if (!this.erpToken) {
-        await this.obtainErpTokenIfNeeded();
-      }
-      /*if (this.erpToken) {
-        // Ex: POST vers API ERP
-        try {
-          await axios.post(`${process.env.ERP_API_URL ?? 'http://localhost:3335'}/api/receive`, saved, {
-            headers: { Authorization: `Bearer ${this.erpToken}` },
-            timeout: 5000,
-          });
-          console.log('Forward vers ERP réussi (HTTP).');
-        } catch (httpErr) {
-          console.warn('Forward vers ERP échoué (HTTP): ' + (httpErr?.message ?? httpErr));
-          // Ne throw pas — on continue
-        }
-      }*/
-      // Optionnel: forward via socket à un namespace ERP
-      if (this.erpSocket && this.erpSocket.connected) {
-        this.erpSocket.emit('externalWeight', saved);
-      }
-    } catch (forwardErr) {
-      //console.log('Erreur forward: ' + forwardErr?.message ?? forwardErr);
-    }
-
-    // NE PAS déconnecter le client ici ! On laisse la connexion ouverte pour de futurs envois.
-    return saved;
+    saved = await Flash.save(payload); // garde ton usage existant
+    console.log('Enregistrement Flash OK id=' + saved?.id);
+  } catch (dbErr) {
+    //console.error('Erreur sauvegarde Flash: ' + dbErr.message);
+    console.error('Erreur sauvegarde Flash: ' + dbErr.message);
+    throw dbErr;
   }
-  
+
+  // 2) Forward vers ERP (si nécessaire) — non bloquant mais on peut tenter
+  try {
+    // Si tu as besoin du token ERP, vérifie s'il est disponible, sinon tente une auth
+    if (!this.erpToken) {
+      await this.obtainErpTokenIfNeeded();
+    }
+    /*if (this.erpToken) {
+      // Ex: POST vers API ERP
+      console.log('Forward22',this.erpToken);
+      try {
+        await axios.post(`${process.env.ERP_API_URL ?? 'http://localhost:3335'}/api/receive`, saved, {
+          headers: { Authorization: `Bearer ${this.erpToken}` },
+          timeout: 5000,
+        });
+        console.log('Forward vers ERP réussi (HTTP).');
+      } catch (httpErr) {
+        console.warn('Forward vers ERP échoué (HTTP): ' + (httpErr?.message ?? httpErr));
+        // Ne throw pas — on continue
+      }
+    }*/
+    // Optionnel: forward via socket à un namespace ERP
+    if (this.erpSocket && this.erpSocket.connected) {
+      console.log('azazazazaza',this.erpSocket)
+      this.erpSocket.emit('new_Item_to_erp', saved);
+    }
+  } catch (forwardErr) {
+    console.log('Erreur forward: ' + forwardErr?.message ?? forwardErr);
+  }
+
+  // NE PAS déconnecter le client ici ! On laisse la connexion ouverte pour de futurs envois.
+  return saved;
+}
+
 async purgeExceptLast(station: string, keep = 1) {
   await Flash.getRepository()
     .createQueryBuilder()
@@ -234,66 +228,74 @@ async purgeOld(station: string, keep = 1) {
     [station, station, keep]
   );
 }
+ 
   // ---------- Helpers pour ERP ----------
-  private async obtainErpTokenIfNeeded() {
-    if (this.erpToken) return this.erpToken;
-    if (!this.ERP_LOGIN || !this.ERP_PASSWORD) {
-      //console.warn('ERP credentials non fournis (ERP_LOGIN/ERP_PASSWORD). Ignorer auth ERP.');
-      return null;
-    }
-    try {
-      const resp = await axios.post(this.ERP_AUTH_URL, {
-        username: this.ERP_LOGIN,
-        password: this.ERP_PASSWORD,
-      }, { timeout: 5000 });
-      this.erpToken = resp?.data?.token ?? null;
-      console.log('Token ERP obtenu');
-      return this.erpToken;
-    } catch (err) {
+private async obtainErpTokenIfNeeded() {
+
+  if (this.erpToken) {
+    return this.erpToken;
+  }
+  if (!this.ERP_LOGIN || !this.ERP_PASSWORD) {
+   this.erpToken= await axios.post('http://localhost:3335/posgpt-backend/api/v1/auth/login', {
+      username:  'admin',
+      password:  'admin',
+    }, { timeout: 5000 }).then(resp=>resp?.data?.token ?? null).catch(err=>{
       console.warn('Erreur auth ERP: ' + (err?.message ?? err));
       return null;
-    }
+    });
   }
-
-  private async connectToErp() {
-    try {
-      // si on a pas de token, tente d'en obtenir un (mais ne bloque pas le gateway)
-      await this.obtainErpTokenIfNeeded();
-
-      if (!this.erpToken) {
-        console.warn('Pas de token ERP — connexion socket ERP non tentée.');
-        return;
-      }
-
-      if (this.erpSocket && this.erpSocket.connected) {
-        console.log('ERP socket déjà connecté');
-        return;
-      }
-
-      this.erpSocket = io(this.ERP_WS_URL, {
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionAttempts: 0,
-        auth: { token: this.erpToken },
-      });
-
-      this.erpSocket.on('connect', () => {
-        console.log('Connecté au WS ERP');
-      });
-
-      this.erpSocket.on('connect_error', (err: any) => {
-        console.warn('Erreur connexion ERP Socket: ' + (err?.message ?? err));
-      });
-
-      this.erpSocket.on('disconnect', (reason: any) => {
-        console.warn('Déconnecté du ERP Socket: ' + reason);
-        // la lib gère la reconnexion
-      });
-
-    } catch (err) {
-      console.error('connectToErp exception: ' + (err?.message ?? err));
-    }
+   
+  try {
+    const resp = await axios.post('http://localhost:3335/posgpt-backend/api/v1/auth/login', {
+     username:  'admin',
+      password: 'admin',
+    }, { timeout: 5000 });
+    this.erpToken = resp?.data?.token ?? null;
+    return this.erpToken;
+  } catch (err) {
+    console.warn('Erreur auth ERP: ' + (err?.message ?? err));
+    return null;
   }
+}
+
+private async connectToErp() {
+  try {
+    // si on a pas de token, tente d'en obtenir un (mais ne bloque pas le gateway)
+    await this.obtainErpTokenIfNeeded();
+    if (!this.erpToken) {
+      console.warn('Pas de token ERP — connexion socket ERP non tentée.');
+      return;
+    }
+
+    if (this.erpSocket && this.erpSocket.connected) {
+      console.log('ERP socket déjà connecté');
+      return;
+    }
+    console.log('Token ERP pour socket:', this.erpToken);
+    this.erpSocket = io('http://localhost:3335/ws', {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 0,
+      auth: { token: this.erpToken },
+    });
+
+    this.erpSocket.on('connect', () => {
+      console.log('Connecté au WS ERP');
+    });
+
+    this.erpSocket.on('connect_error', (err: any) => {
+      console.warn('Erreur connexion ERP Socket: ' + (err?.message ?? err));
+    });
+
+    this.erpSocket.on('disconnect', (reason: any) => {
+      console.warn('Déconnecté du ERP Socket: ' + reason);
+      // la lib gère la reconnexion
+    });
+
+  } catch (err) {
+    console.error('connectToErp exception: ' + (err?.message ?? err));
+  }
+}
 
   // ---------- events utilitaires ----------
   @SubscribeMessage('closesession')

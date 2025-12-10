@@ -1,4 +1,6 @@
-import { PickType } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { StationEnum } from 'src/core/definitions/enums';
 import { Flash } from 'src/core/entities/flash/flash.entity';
 
 export class CreateFlashDto extends PickType(Flash, [
@@ -6,5 +8,9 @@ export class CreateFlashDto extends PickType(Flash, [
   'computerUser',
   'computerName',
   'userProfile',
-  'station',
-] as const) {}
+] as const) {
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ required: true })
+  station: StationEnum;
+}

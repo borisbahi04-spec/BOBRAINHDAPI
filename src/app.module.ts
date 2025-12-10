@@ -60,7 +60,6 @@ import { GatewayModule } from './gateway/gateway.module';
       isGlobal: true,
     }),
     { module: CoreModule, global: true },
-    /*{ module: CoreFactoryModule, global: true },*/
     { module: AuthModule, global: true },
     { module: MailModule, global: true },
     { module: PaginationModule, global: true },

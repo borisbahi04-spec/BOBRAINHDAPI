@@ -42,9 +42,13 @@ export enum AccessTypeEnum {
 
 
 
-export enum SettingTypeEnum {
-  store = 'store',
-  system = 'system',
+export enum StationEnum {
+  AY1 = 'AY1',
+  AY2 = 'AY2',
+  AD1 = 'AD1',
+  AD2 = 'AD2',
+  EB1 = 'EB1',
+  EB2 = 'EB2', 
 }
 
 
