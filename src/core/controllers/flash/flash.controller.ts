@@ -19,7 +19,7 @@ import { UserService } from '../../services/user/user.service';
 import { FlashService } from 'src/core/services/flash/flash.service';
 import { Flash } from 'src/core/entities/flash/flash.entity';
 
-@ApiAuthJwtHeader()
+//@ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
 @CustomApiErrorResponse()
 @ApiTags('flash')
