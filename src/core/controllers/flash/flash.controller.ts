@@ -72,10 +72,10 @@ export class FlashController {
     @CurrentUser() authUser: AuthUser,
     @Param('station') station: string,
   ): Promise<Flash> {
-    await authUser?.throwUnlessCan(
+    /*await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
       AbilitySubjectEnum.Flash,
-    );
+    );*/
 
     console.log('Station reçue:', station);
     return this.service.readOneWeight({ station });

@@ -32,7 +32,6 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   private readonly JWT_SECRET = process.env.JWT_SECRET; // remplace par ton secret en prod
  
-  private ERP_ADDRESS='10.0.0.164';
   @Inject(Logger4jsService)
   private logger: Logger4jsService;
 
@@ -237,7 +236,7 @@ private async obtainErpTokenIfNeeded() {
     return this.erpToken;
   }
   if (!this.ERP_LOGIN || !this.ERP_PASSWORD) {
-   this.erpToken= await axios.post(`http://10.0.0.164:3335/posgpt-backend/api/v1/auth/login`, {
+   this.erpToken= await axios.post('http://localhost:3335/posgpt-backend/api/v1/auth/login', {
       username:  'admin',
       password:  'admin',
     }, { timeout: 5000 }).then(resp=>resp?.data?.token ?? null).catch(err=>{
@@ -247,7 +246,7 @@ private async obtainErpTokenIfNeeded() {
   }
    
   try {
-    const resp = await axios.post(`http://10.0.0.164:3335/posgpt-backend/api/v1/auth/login`, {
+    const resp = await axios.post('http://localhost:3335/posgpt-backend/api/v1/auth/login', {
      username:  'admin',
       password: 'admin',
     }, { timeout: 5000 });
@@ -273,7 +272,7 @@ private async connectToErp() {
       return;
     }
     console.log('Token ERP pour socket:', this.erpToken);
-    this.erpSocket = io(`http://10.0.0.164:3335/ws`, {
+    this.erpSocket = io('http://localhost:3335/ws', {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 0,
