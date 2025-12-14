@@ -17,4 +17,8 @@ export class CreateFlashDto extends PickType(Flash, [
   @IsString()
   @ApiProperty({ required: false })
   frame: string;
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false })
+  status: string;
 }

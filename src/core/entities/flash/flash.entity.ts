@@ -50,6 +50,11 @@ export class Flash extends CoreEntity {
   station: string;
 
   @IsString()
+  @ApiProperty({ description: `Statut WeightBridge` })
+  @Column({ name: 'status', nullable: true })
+  status: string;
+
+  @IsString()
   @ApiProperty({ description: `user name CL` })
   @Column({ name: 'user_name', nullable: true })
   userName: string;
