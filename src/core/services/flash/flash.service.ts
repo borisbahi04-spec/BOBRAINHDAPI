@@ -72,6 +72,11 @@ export class FlashService extends AbstractService<Flash> {
         `Aucun poids disponible pour la station ${entity.station}`,
       );
     }
+    if (entity.sentWeight <= 0) {
+      throw new BadRequestException(
+        `Impossible de lire les valeur inferieur ou égale a 0 ${entity.station}`,
+      );
+    }
     const newData = {
       weight: entity.sentWeight,
       trame: entity.frame,
