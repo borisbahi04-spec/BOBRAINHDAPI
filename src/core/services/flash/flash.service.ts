@@ -69,7 +69,7 @@ export class FlashService extends AbstractService<Flash> {
     }
     if (!entity.frame) {
       throw new BadRequestException(
-        `Aucun poids disponible pour la station ${entity.station}`,
+        `Verifiez le port de connexion/poids est à zero ${entity.station}`,
       );
     }
     if (entity.sentWeight <= 0) {
