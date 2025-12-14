@@ -40,6 +40,11 @@ export class Flash extends CoreEntity {
   computerUser: string;
 
   @IsString()
+  @ApiProperty({ description: `frame CL` })
+  @Column({ name: 'frame', nullable: true })
+  frame: string;
+
+  @IsString()
   @ApiProperty({ description: `Station CL` })
   @Column({ name: 'station', nullable: true })
   station: string;

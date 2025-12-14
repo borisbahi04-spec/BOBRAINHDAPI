@@ -67,8 +67,19 @@ export class FlashService extends AbstractService<Flash> {
     if (!entity) {
       throw new BadRequestException(this.NOT_FOUND_MESSAGE);
     }
+    if (!entity.frame) {
+      throw new BadRequestException(
+        `Aucun poids disponible pour la station ${entity.station}`,
+      );
+    }
+    const newData = {
+      weight: entity.sentWeight,
+      trame: entity.frame,
+      date: entity.createdAt,
+      ...entity,
+    };
 
-    return entity;
+    return newData as any;
   }
 
   async createRecord(dto: CreateFlashDto) {
