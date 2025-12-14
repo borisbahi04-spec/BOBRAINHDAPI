@@ -8,7 +8,7 @@ import {
   Paginated,
 } from '@app/nestjs';
 import { buildFilterFromApiSearchParams } from '@app/typeorm';
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApiAuthJwtHeader } from 'src/modules/auth/decorators/api-auth-jwt-header.decorator';
 import { ApiRequestIssuerHeader } from 'src/modules/auth/decorators/api-request-issuer-header.decorator';
@@ -18,6 +18,8 @@ import { AuthUser } from '../../entities/session/auth-user.entity';
 import { UserService } from '../../services/user/user.service';
 import { FlashService } from 'src/core/services/flash/flash.service';
 import { Flash } from 'src/core/entities/flash/flash.entity';
+import { LocalAuthGuard } from 'src/modules/auth/guards/local-auth.guard';
+import { IsAnonymous } from 'src/modules/auth/decorators/is-anonymous.decorator';
 
 //@ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
@@ -66,6 +68,8 @@ export class FlashController {
   /**
    * Get paginated flash list for select
    */
+  @IsAnonymous()
+  //@UseGuards(LocalAuthGuard)
   @ApiSearchQueryFilter()
   @Get('/sendweight/:station')
   async findReadOneWeight(
