@@ -15,6 +15,8 @@ import { Server, Socket } from 'socket.io';
 import { Flash } from 'src/core/entities/flash/flash.entity';
 import axios from 'axios';
 import { io, Socket as ClientSocket } from 'socket.io-client';
+import { Logger4jsService } from '@app/nestjs';
+import { Inject } from '@nestjs/common';
 
 @WebSocketGateway({ namespace: '/ws', cors: { origin: '*' } })
 export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -23,31 +25,22 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   private erpSocket: ClientSocket | null = null;
   private erpToken: string | null = null;
 
-  private  ERP_AUTH_URI: string;
-  private  ERP_WS_URL: string;
-  private  ERP_BASE_PORT: string ;
-  private  ERP_LOGIN: string;
-  private  ERP_PASSWORD: string ;
-  private  ERP_WS_URI : string;
-  private  ERP_URI : string
-  private ERP_URL: string ;
-  private ERP_LOGINURL: string ;
-  private readonly JWT_SECRET = process.env.APP_JWT_SECRET; // remplace par ton secret en prod
+  private  ERP_AUTH_URL: string='http://localhost:3335/posgpt-backend/api/v1/auth/login';
+  private  ERP_WS_URL: string='http://localhost:3335/ws'
+  private  ERP_LOGIN: string='admin';
+  private  ERP_PASSWORD: string='admin';
+
+  private readonly JWT_SECRET = process.env.JWT_SECRET; // remplace par ton secret en prod
  
-  private ERP_BASE_URL : string ;
+  private ERP_ADDRESS='10.0.0.52';
+  @Inject(Logger4jsService)
+  private logger: Logger4jsService;
+
+
 
   afterInit(server: Server) {
-    this.ERP_BASE_URL = process.env.API_ERP_BASE_URL;;
-    this.ERP_AUTH_URI = process.env.API_ERP_AUTH_URI;
-    this.ERP_BASE_PORT = process.env.API_ERP_BASE_PORT;
-    this.ERP_URI = process.env.API_ERP_URI;
-    this.ERP_LOGIN = process.env.API_ERP_LOGIN;
-    this.ERP_PASSWORD = process.env.API_ERP_PASSWORD;
-    this.ERP_WS_URI = process.env.ERP_WS_URI;
-    
-    this.ERP_WS_URL = `${this.ERP_BASE_URL}:${this.ERP_BASE_PORT}/${this.ERP_WS_URI}`;
-    this.ERP_URL = `${this.ERP_BASE_URL}:${this.ERP_BASE_PORT}/${this.ERP_URI}`;
-    this.ERP_LOGINURL = `${this.ERP_URL}/${this.ERP_AUTH_URI}`;
+      console.log('zzvvvvvv56565', process.env.ERP_AUTH_URL);
+      
     // Middleware handshake: validate token existance & optionally JWT
     server.use((socket: any, next) => {
       try {
@@ -56,7 +49,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
           return next(new Error('Auth token missing'));
         }
 
-        // Exemple de validation JWT 
+        // Exemple de validation JWT : décommenter si tu utilises JWT
         try {
           //const payload = jwt.verify(token, this.JWT_SECRET);
          
@@ -78,6 +71,8 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   handleConnection(client: Socket) {
+    //console.log(`Client connected: ${client.id} (ns=${client.nsp.name})`);
+    //console.debug(`Client handshake data: ${JSON.stringify(client.handshake.auth)}`);
     console.log(`Client connected: ${client.id} `);
     console.debug(`Client handshake data: ${JSON.stringify(client.handshake.auth)}`);
 
@@ -107,6 +102,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
       // Supporter les 2 cas : string JSON ou objet
       let pload = data;
+      console.log('payload5545454', pload);
       if (typeof data === 'string') {
         try {
           pload = JSON.parse(data);
@@ -193,7 +189,7 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
   return saved;
 }
 
-/*async purgeExceptLast(station: string, keep = 1) {
+async purgeExceptLast(station: string, keep = 1) {
   await Flash.getRepository()
     .createQueryBuilder()
     .delete()
@@ -212,7 +208,7 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
     )
     .setParameters({ station, keep })
     .execute();
-}*/
+}
 
 
 async purgeOld(station: string, keep = 1) {
@@ -241,10 +237,9 @@ private async obtainErpTokenIfNeeded() {
     return this.erpToken;
   }
   if (!this.ERP_LOGIN || !this.ERP_PASSWORD) {
-
-   this.erpToken= await axios.post(this.ERP_LOGINURL, {
-      username:  this.ERP_LOGIN,
-      password:  this.ERP_PASSWORD,
+   this.erpToken= await axios.post(`http://10.0.0.52:3335/posgpt-backend/api/v1/auth/login`, {
+      username:  'admin',
+      password:  'admin',
     }, { timeout: 5000 }).then(resp=>resp?.data?.token ?? null).catch(err=>{
       console.warn('Erreur auth ERP: ' + (err?.message ?? err));
       return null;
@@ -252,14 +247,14 @@ private async obtainErpTokenIfNeeded() {
   }
    
   try {
-    const resp = await axios.post(this.ERP_LOGINURL, {
-     username:  this.ERP_LOGIN,
-      password:  this.ERP_PASSWORD,
+    const resp = await axios.post(`http://10.0.0.52:3335/posgpt-backend/api/v1/auth/login`, {
+     username:  'admin',
+      password: 'admin',
     }, { timeout: 5000 });
     this.erpToken = resp?.data?.token ?? null;
     return this.erpToken;
   } catch (err) {
-    console.warn('Erreur auth ERP2: ' + (err?.message ?? err));
+    console.warn('Erreur auth ERP: ' + (err?.message ?? err));
     return null;
   }
 }
@@ -278,10 +273,7 @@ private async connectToErp() {
       return;
     }
     console.log('Token ERP pour socket:', this.erpToken);
-        console.log('Token898989:', this.ERP_WS_URL);
-
-
-    this.erpSocket = io(this.ERP_WS_URL , {
+    this.erpSocket = io(`http://10.0.0.52:3335/ws`, {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 0,
