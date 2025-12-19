@@ -8,17 +8,15 @@ import {
   Paginated,
 } from '@app/nestjs';
 import { buildFilterFromApiSearchParams } from '@app/typeorm';
-import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiAuthJwtHeader } from 'src/modules/auth/decorators/api-auth-jwt-header.decorator';
 import { ApiRequestIssuerHeader } from 'src/modules/auth/decorators/api-request-issuer-header.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { AbilityActionEnum, AbilitySubjectEnum, StationEnum } from '../../definitions/enums';
+import { AbilityActionEnum, AbilitySubjectEnum } from '../../definitions/enums';
 import { AuthUser } from '../../entities/session/auth-user.entity';
 import { UserService } from '../../services/user/user.service';
 import { FlashService } from 'src/core/services/flash/flash.service';
 import { Flash } from 'src/core/entities/flash/flash.entity';
-import { LocalAuthGuard } from 'src/modules/auth/guards/local-auth.guard';
 import { IsAnonymous } from 'src/modules/auth/decorators/is-anonymous.decorator';
 
 //@ApiAuthJwtHeader()
@@ -52,7 +50,14 @@ export class FlashController {
       this.service.repository,
       query as ApiSearchParamOptions,
       {
-        textFilterFields: ['displayName', 'email', 'phoneNumber', 'city'],
+        textFilterFields: [
+          'station',
+          'userProfile',
+          'userProfile',
+          'status',
+          'computerName',
+          'computerUser',
+        ],
       },
     );
 

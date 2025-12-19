@@ -112,7 +112,6 @@ export class AuthService {
     // Update last authentication
     authUser.user.lastAccessId = authUser.id;
     await authUser.user.save();
-
     return {
       session: authUser,
       abilities: await authUser.getAbililyRules(),

@@ -25,42 +25,21 @@ export const getDefaultRoles = () => {
     // Gestionnaire de vente
     {
       name: 'manager',
-      displayName: 'Gestionnaire de vente',
+      displayName: 'Gestionnaire ',
       isActive: true,
-      description: 'Gestionnaire de vente',
+      description: 'Gestionnaire ',
       adminPermission: false,
       permissions: <RolePermissionsType>{},
     },
 
     // Gestionnaire de vente
     {
-      name: 'seller',
-      displayName: 'Vendeur',
+      name: 'guest',
+      displayName: 'Guest',
       isActive: true,
-      description: 'Vendeur',
+      description: 'Guest',
       adminPermission: false,
       permissions: <RolePermissionsType>{},
     },
-
-    /*[AbilitySubjectEnum.User]: {
-      [AbilityActionEnum.read]: true,
-      [AbilityActionEnum.create]: true,
-      [AbilityActionEnum.edit]: true,
-      [AbilityActionEnum.delete]: true,
-    },
-    [AbilitySubjectEnum.Branch]: {
-      [AbilityActionEnum.read]: true,
-      [AbilityActionEnum.create]: true,
-      [AbilityActionEnum.edit]: true,
-      [AbilityActionEnum.delete]: true,
-      [AbilityActionEnum.stream]: true,
-    },
-    [AbilitySubjectEnum.Product]: {
-      [AbilityActionEnum.read]: true,
-      [AbilityActionEnum.create]: true,
-      [AbilityActionEnum.edit]: true,
-      [AbilityActionEnum.delete]: true,
-      [AbilityActionEnum.stream]: true,
-    },*/
   ];
 };

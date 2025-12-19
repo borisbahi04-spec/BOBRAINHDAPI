@@ -9,7 +9,6 @@ import {
 } from '@app/nestjs';
 import { buildFilterFromApiSearchParams } from '@app/typeorm';
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,

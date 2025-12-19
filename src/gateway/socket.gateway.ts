@@ -80,6 +80,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   handleConnection(client: Socket) {
     console.log(`Client connected: ${client.id} `);
     console.debug(`Client handshake data: ${JSON.stringify(client.handshake.auth)}`);
+    this.server.emit('start_flash_backend', { response: 'start_flash_backend', data: null });
 
     // Optionnel : initialiser connexion ERP la première fois (non bloquant)
     // on démarre une tentative de connexion au ERP si nécessaire (async fire-and-forget)
@@ -138,7 +139,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
 
   // ---------- Exemple de sauvegarde + forward (adapter selon ta DB/service) ----------
 private async saveAndForward(payload: any, token: string , client: Socket) {
-  console.log('saveAndForward démarré');
+  console.log('saveAndForward démarré',payload);
 
   // 1) Sauvegarde locale via ton entity (Flash.save attend un objet JS)
   //    Ton code original faisait: const saved = await Flash.save(JSON.parse(data));
@@ -153,7 +154,11 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
     
 
     saved = await Flash.save(payload); // garde ton usage existant
-    console.log('Enregistrement Flash OK id=' + saved?.id);
+
+    console.log('Enregistrement Flash OK id=' + saved);
+    if(saved){
+      this.server.emit('sent_new_flash', { response: 'sent_new_flash', data: saved });
+    }
   } catch (dbErr) {
     //console.error('Erreur sauvegarde Flash: ' + dbErr.message);
     console.error('Erreur sauvegarde Flash: ' + dbErr.message);
@@ -180,9 +185,9 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
         // Ne throw pas — on continue
       }
     }*/
+
     // Optionnel: forward via socket à un namespace ERP
     if (this.erpSocket && this.erpSocket.connected) {
-      console.log('azazazazaza',this.erpSocket)
       this.erpSocket.emit('new_Item_to_erp', saved);
     }
   } catch (forwardErr) {
@@ -326,7 +331,7 @@ private async connectToErp() {
   // autres handlers simples
   @SubscribeMessage('create_action')
   handleStartShelling(@MessageBody() data: any) {
-    this.server.emit('create_action', { response: 'create_action', data });
+    this.server.emit('start_flash', { response: 'start_flash', data });
   }
 
   @SubscribeMessage('new_Item')

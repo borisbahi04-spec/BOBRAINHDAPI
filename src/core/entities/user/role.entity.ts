@@ -93,7 +93,7 @@ export class Role extends CoreEntity {
       }
     }
 
-    rules = this.applyAdminPermission(rules, this.adminPermission);
+    rules = this.applyPermission(rules, this.adminPermission);
     this._abilityRules = rules;
 
     return rules;
@@ -136,6 +136,29 @@ export class Role extends CoreEntity {
     return rule;
   }
 
+  private applyPermission(rules: RawRule[], adminPermission: boolean) {
+    if (adminPermission !== true) {
+      rules.push(
+        {
+          subject: AbilitySubjectEnum.Flash,
+          action: AbilityActionEnum.read,
+        },
+        {
+          subject: AbilitySubjectEnum.Branch,
+          action: AbilityActionEnum.read,
+        },
+      );
+      return rules;
+    }
+
+    rules.push({
+      subject: AbilitySubjectEnum.all,
+      action: AbilityActionEnum.manage,
+    });
+
+    return rules;
+  }
+
   private applyAdminPermission(rules: RawRule[], adminPermission: boolean) {
     if (adminPermission !== true) return rules;
 
@@ -147,6 +170,16 @@ export class Role extends CoreEntity {
     return rules;
   }
 
+  private applyGuestPermission(rules: RawRule[], guestPermission: boolean) {
+    if (guestPermission !== true) return rules;
+
+    rules.push({
+      subject: AbilitySubjectEnum.all,
+      action: AbilityActionEnum.read,
+    });
+
+    return rules;
+  }
   toJSON() {
     return instanceToPlain(this);
   }

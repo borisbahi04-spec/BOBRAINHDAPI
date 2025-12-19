@@ -18,9 +18,6 @@ import { BranchService } from './services/subsidiary/branch.service';
 import { User } from './entities/user/user.entity';
 import { DefaultDataService } from './services/system/default-data.service';
 import { ModuleRef } from '@nestjs/core';
-import { Pin } from './entities/user/pin.entity';
-import { PinController } from './controllers/user/pin.controller';
-import { PinService } from './services/user/pin.service';
 import { AccessService } from './services/user/access.service';
 import { AccessController } from './controllers/user/access.controller';
 import { ConfigService } from './services/system/config.service';
@@ -40,7 +37,6 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
       AuthLog,
       AuthUser,
       User,
-      Pin,
       Role,
       Branch,
       BranchToUser,
@@ -51,7 +47,6 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
     UserController,
     RoleController,
     AccessController,
-    PinController,
     BranchController,
     FlashController,
   ],
@@ -62,7 +57,6 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
     AuthLogService,
     RoleService,
     AccessService,
-    PinService,
     BranchService,
     ConfigService,
     DefaultDataService,

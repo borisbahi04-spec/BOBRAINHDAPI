@@ -11,5 +11,13 @@ export const getDefaultUsers = () => {
       firstName: 'Bahi Boris',
       lastName: 'BAHI',
     },
+    {
+      username: 'userpont',
+      newPassword: 'user@pont',
+      email: 'userPont@localhost',
+      isActive: true,
+      firstName: 'User',
+      lastName: 'Pont',
+    },
   ];
 };

@@ -22,12 +22,12 @@ export class LocalAuthGuard extends AuthGuard('local') {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-
     this.logger.setContext(LocalAuthGuard.name);
     this.logger.info(_.omit(request.body, ['password']), request.headers);
 
     // Throttle too many username login request
     const username: string = request.body?.username;
+
     await this.authLogService.throttleByUsername(
       request,
       AuthLogAuthMethodEnum.local,
@@ -60,6 +60,7 @@ export class LocalAuthGuard extends AuthGuard('local') {
       authLog.isDenied = true;
       authLog.denialReason = info?.message;
       authLog.save();
+      console.log('torto', err);
 
       throw new UnauthorizedException(
         [{ username: [info?.message] }],

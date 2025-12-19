@@ -21,7 +21,6 @@ import {
 } from '@app/typeorm';
 import { Role } from '../../entities/user/role.entity';
 import { AbstractService } from '../abstract.service';
-import { PinService } from './pin.service';
 import { MailerSenderService } from 'src/mailer/services/mailer.service';
 import { Branch } from 'src/core/entities/subsidiary/branch.entity';
 
@@ -32,7 +31,6 @@ export class UserService extends AbstractService<User> {
   constructor(
     @InjectRepository(User) private _repository: Repository<User>,
     protected paginatedService: PaginatedService<User>,
-    protected pinService: PinService,
     protected mailerService: MailerSenderService,
 
     @Inject(REQUEST) protected request: any,

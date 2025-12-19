@@ -11,7 +11,7 @@ export const getDefaultAccesss = () => {
       entity: <EntityType>{
         [AbilitySubjectEnum.User]: false,
         [AbilitySubjectEnum.Branch]: false,
-        [AbilitySubjectEnum.Product]: false,
+        [AbilitySubjectEnum.Flash]: false,
         [AbilitySubjectEnum.Role]: false,
         [AbilitySubjectEnum.Setting]: false,
       },
@@ -23,36 +23,5 @@ export const getDefaultAccesss = () => {
         stream: false,
       },
     },
-
-    /*// Gestionnaire de vente
-    {
-      name: AccessTypeEnum.manager,
-      displayName: 'Gestionnaire de vente',
-      description: 'Gestionnaire de vente',
-      adminPermission: false,
-      permissions: <AccessPermissionsType>{
-        [AbilitySubjectEnum.User]: false,
-        [AbilitySubjectEnum.Branch]: false,
-        [AbilitySubjectEnum.Product]: false,
-        [AbilitySubjectEnum.Order]: true,
-        [AbilitySubjectEnum.Sale]: true,
-        [AbilitySubjectEnum.SalePayment]: false,
-        [AbilitySubjectEnum.Supplier]: false,
-      },
-      fieldPermissions: <AccessFieldPermissionsType>{},
-    },
-
-    // Gestionnaire de vente
-    {
-      name: AccessTypeEnum.seller,
-      displayName: 'Vendeur',
-      description: 'Vendeur',
-      adminPermission: false,
-      permissions: <AccessPermissionsType>{
-        [AbilitySubjectEnum.Product]: false,
-        [AbilitySubjectEnum.Order]: false,
-      },
-      fieldPermissions: <AccessFieldPermissionsType>{},
-    },*/
   ];
 };

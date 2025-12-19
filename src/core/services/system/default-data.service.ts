@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { Role } from '../../entities/user/role.entity';
 import {
@@ -77,69 +78,9 @@ export class DefaultDataService {
     const roles: Role[] = [];
     let exists: number;
 
-    const ownerAccess = await Access.findBy({ name: AccessTypeEnum.owner });
-    const managerAccess = await Access.findBy({ name: AccessTypeEnum.manager });
-    const sellerAccess = await Access.findBy({ name: AccessTypeEnum.seller });
-    console.log('titi', defaultRoles);
-
-    /*if (ownerAccess.length <= 0) {
-      return [];
-    }
-    if (managerAccess.length <= 0) {
-      return [];
-    }
-    if (sellerAccess.length <= 0) {
-      return [];
-    }*/
     for (const dto of defaultRoles) {
-      let modifiedDto: any;
-      /*if (dto.name == AccessTypeEnum.owner) {
-        modifiedDto = {
-          ...dto,
-          accessToRoles: [
-            {
-              accessId: ownerAccess[0].id,
-              accessType: AccessTypeEnum.owner,
-              permissions: ownerAccess[0]?.permissions ?? {},
-            },
-          ],
-        };
-      }
-      if (dto.name == AccessTypeEnum.manager) {
-        if (managerAccess) {
-          modifiedDto = {
-            ...dto,
-            accessToRoles: [
-              {
-                accessId: managerAccess[0].id,
-                accessType: AccessTypeEnum.manager,
-                permissions: managerAccess[0]?.permissions ?? {},
-              },
-            ],
-          };
-        }
-      }
-
-      if (dto.name == AccessTypeEnum.seller) {
-        if (sellerAccess) {
-          modifiedDto = {
-            ...dto,
-            accessToRoles: [
-              {
-                accessId: sellerAccess[0].id,
-                accessType: AccessTypeEnum.seller,
-                permissions: sellerAccess[0].permissions ?? {},
-              },
-            ],
-          };
-        }
-      }*/
-      /*if (dto.name == 'admin') {
-        modifiedDto = dto;
-      }*/
-
+     
       exists = await Role.countBy({ name: dto.name });
-      console.log('azzeeeee2000', exists);
 
       if (exists <= 0) {
         roles.push(await Role.save(dto as any));
@@ -158,6 +99,7 @@ export class DefaultDataService {
     if (users.length > 0 || branches.length <= 0 || roles.length <= 0) {
       return [];
     }
+
     let user: User;
     for (const dto of defaultUsers) {
       exists = await User.countBy({ username: dto.username });
@@ -167,12 +109,17 @@ export class DefaultDataService {
         if (!isEmpty(dto.newPassword)) {
           await user.setNewPassword(dto.newPassword);
         }
-        console.log('titi46565',branches[0]);
+        if(dto.username=="admin"){
+          user.roleId=roles[0].id;
+        }else{
+        const roles = await Role.findBy({ name: AccessTypeEnum.admin });
+         user.roleId=roles[0].id;
+        }
         users.push(
           await User.save({
             ...user,
             branchId: branches[0].id,
-            roleId: roles[0].id,
+            //roleId: roles[0].id,
           }),
         );
       }

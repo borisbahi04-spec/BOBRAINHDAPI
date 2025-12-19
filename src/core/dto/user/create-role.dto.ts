@@ -25,7 +25,7 @@ export class CreateRoleDto extends PickType(Role, [
 
 export class CreateAccessToRoleDto extends PickType(AccessToRole, [
   'accessId',
-  'isSellerAccess',
+  'isGuestAccess',
   'isManagerAccess',
   'isOwnerAccess',
   'adminPermission',

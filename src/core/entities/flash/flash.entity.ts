@@ -65,9 +65,18 @@ export class Flash extends CoreEntity {
   computerName: string;
 
   @IsString()
+  @ApiProperty({ description: `latency` })
+  @Column({ name: 'latency', nullable: true })
+  latency: string;
+
+  @IsString()
   @ApiProperty({ description: `computer user profile CL` })
   @Column({ name: 'user_profile', nullable: true })
   userProfile: string;
+  @IsNumber()
+  @ApiProperty({ description: `timestamp` })
+  @Column({ name: 'timestamp', nullable: true })
+  timestamp: number;
 
   toJSON() {
     return instanceToPlain(this);

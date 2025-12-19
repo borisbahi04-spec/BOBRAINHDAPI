@@ -37,9 +37,9 @@ export class AccessToRole extends CoreEntity {
 
   @IsBoolean()
   @IsOptional()
-  @ApiProperty({ required: false, description: ` Acces Vendeur Actif` })
-  @Column({ name: 'is_seller_access', default: false })
-  isSellerAccess: boolean;
+  @ApiProperty({ required: false, description: ` Acces Invite Actif` })
+  @Column({ name: 'is_guest_access', default: false })
+  isGuestAccess: boolean;
 
   @IsBoolean()
   @IsOptional()

@@ -7,12 +7,9 @@ export enum AbilitySubjectEnum {
   all = 'all',
   User = 'User',
   Branch = 'Branch',
-  Product = 'Product',
   Role = 'Role',
   Flash = 'Flash',
-
   Setting = 'Setting',
-
   AuthUser = 'AuthUser',
 }
 
@@ -34,10 +31,11 @@ export enum userTypeEnum {
 export enum AccessTypeEnum {
   // Owner
   owner = 'owner',
+  admin = 'admin',
   // Manager
   manager = 'manager',
-  // Seller
-  seller = 'seller',
+  
+  guest = 'guest',
 }
 
 
