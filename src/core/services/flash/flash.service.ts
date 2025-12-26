@@ -1,12 +1,7 @@
 import { PaginatedService } from '@app/typeorm';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  OnModuleInit,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { REQUEST } from '@nestjs/core';
 import { AbstractService } from '../abstract.service';
 import { Flash } from 'src/core/entities/flash/flash.entity';
@@ -73,7 +68,9 @@ export class FlashService extends AbstractService<Flash> {
       );
     }
     if (entity.sentWeight <= 0) {
-      throw new BadRequestException(`Poids est à zero 0 ${entity.station}`);
+      throw new BadRequestException(
+        `Poids est inferieur ou égale à zéro  ${entity.station}`,
+      );
     }
     const newData = {
       weight: entity.sentWeight,

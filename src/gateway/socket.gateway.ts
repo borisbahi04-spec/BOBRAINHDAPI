@@ -153,10 +153,10 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
       payload = JSON.parse(payload);
     }
 
-      const sendWeight = Number(payload.sendWeight);
+      const sentWeight = Number(payload.sentWeight);
       if (
         payload.status === StatusFlashEnum.WEIGHT_OK &&
-        (!Number.isFinite(sendWeight) || sendWeight <= 0)
+        (!Number.isFinite(sentWeight) || sentWeight <= 0)
       ) {
         payload.status = StatusFlashEnum.WEIGHT_NOT_OK;
       }
