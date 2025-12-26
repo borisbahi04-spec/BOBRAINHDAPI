@@ -15,6 +15,7 @@ import { Server, Socket } from 'socket.io';
 import { Flash } from 'src/core/entities/flash/flash.entity';
 import axios from 'axios';
 import { io, Socket as ClientSocket } from 'socket.io-client';
+import { StatusFlashEnum } from 'src/core/definitions/enums';
 
 @WebSocketGateway({ namespace: '/ws', cors: { origin: '*' } })
 export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -152,9 +153,10 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
       payload = JSON.parse(payload);
     }
     
-
+     if (payload.status==StatusFlashEnum.WEIGHT_OK && payload.sendWeight<=0){
+        payload.status==StatusFlashEnum.WEIGHT_NOT_OK
+     }
     saved = await Flash.save(payload); // garde ton usage existant
-
     console.log('Enregistrement Flash OK id=' + saved);
     if(saved){
       this.server.emit('sent_new_flash', { response: 'sent_new_flash', data: saved });

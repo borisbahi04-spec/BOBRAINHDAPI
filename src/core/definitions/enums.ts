@@ -27,18 +27,25 @@ export enum userTypeEnum {
   OTHER = 'OTHER',
 }
 
-
 export enum AccessTypeEnum {
   // Owner
   owner = 'owner',
   admin = 'admin',
   // Manager
   manager = 'manager',
-  
+
   guest = 'guest',
 }
 
-
+export enum StatusFlashEnum {
+  SERIAL_CONNECTED = 'SERIAL_CONNECTED',
+  SERIAL_DISCONNECTED = 'SERIAL_DISCONNECTED',
+  DISPLAY_ON = 'DISPLAY_ON',
+  DISPLAY_OFF = 'DISPLAY_OFF',
+  SERVICE_SHUTDOWN = 'SERVICE_SHUTDOWN',
+  WEIGHT_OK = 'WEIGHT_OK',
+  WEIGHT_NOT_OK = 'WEIGHT_NOT_OK',
+}
 
 export enum StationEnum {
   AY1 = 'AY1',
@@ -46,9 +53,8 @@ export enum StationEnum {
   AD1 = 'AD1',
   AD2 = 'AD2',
   EB1 = 'EB1',
-  EB2 = 'EB2', 
+  EB2 = 'EB2',
 }
-
 
 export enum AuthLogAuthMethodEnum {
   local = 'local',
