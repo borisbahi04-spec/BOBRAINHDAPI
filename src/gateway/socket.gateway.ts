@@ -152,10 +152,15 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
     if (typeof payload === 'string') {
       payload = JSON.parse(payload);
     }
-    
-     if (payload.status==StatusFlashEnum.WEIGHT_OK && payload.sendWeight<=0){
-        payload.status==StatusFlashEnum.WEIGHT_NOT_OK
-     }
+
+      const sendWeight = Number(payload.sendWeight);
+      if (
+        payload.status === StatusFlashEnum.WEIGHT_OK &&
+        (!Number.isFinite(sendWeight) || sendWeight <= 0)
+      ) {
+        payload.status = StatusFlashEnum.WEIGHT_NOT_OK;
+      }
+
     saved = await Flash.save(payload); // garde ton usage existant
     console.log('Enregistrement Flash OK id=' + saved);
     if(saved){
