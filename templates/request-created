@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <body style="margin:0; padding:0; background-color:#eef1f5; font-family:Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#eef1f5">
+      <tr>
+        <td align="center" style="padding:30px 10px;">
+          <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
+
+            <!-- Header -->
+            <tr>
+              <td bgcolor="#2e7d32" style="padding:20px; color:#ffffff;">
+                <table width="100%">
+                  <tr>
+                    <td style="font-size:20px; font-weight:bold;">
+                      ✔ Ticket clôturé
+                    </td>
+                    <td align="right" style="font-size:13px;">
+                      Réf : <strong>{{reference}}</strong>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td style="padding:25px; color:#333333; font-size:14px;">
+                <p style="margin-top:0;">
+                  Bonjour <strong>{{title}}</strong>,
+                </p>
+
+                <p>
+                  Votre demande a été <strong>traitée et clôturée avec succès</strong>.
+                </p>
+
+                <!-- Status -->
+                <table cellpadding="0" cellspacing="0" style="margin:15px 0;">
+                  <tr>
+                    <td bgcolor="#e8f5e9" style="padding:6px 12px; font-size:12px; color:#2e7d32;">
+                      STATUT : <strong>CLÔTURÉ</strong>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Infos -->
+                <table width="100%" cellpadding="8" cellspacing="0" bgcolor="#f7f9fc">
+                  <tr>
+                    <td width="35%" style="font-weight:bold;">Ticket</td>
+                    <td>{{ticket}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:bold;">Type</td>
+                    <td>{{requestType}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:bold;">Priorité</td>
+                    <td>{{priority}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:bold;">Station</td>
+                    <td>{{station}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:bold;">Société</td>
+                    <td>{{branch}}</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight:bold;">Date de clôture</td>
+                    <td>{{closedAt}}</td>
+                  </tr>
+                </table>
+
+                <!-- Resolution -->
+                <p style="margin-top:20px; font-weight:bold;">
+                  🛠 Solution apportée
+                </p>
+                <table width="100%" cellpadding="10" cellspacing="0" bgcolor="#ffffff" style="border-left:4px solid #2e7d32;">
+                  <tr>
+                    <td style="color:#555555;">
+                      <!-- CTA {{resolution}} -->
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- CTA -->
+                <table align="center" cellpadding="0" cellspacing="0" style="margin:30px auto;">
+                  <tr>
+                    <td bgcolor="#2e7d32" style="padding:12px 24px;">
+                      <a href="{{url}}" target="_blank" style="color:#ffffff; text-decoration:none; font-weight:bold; font-size:14px;">
+                        Consulter le ticket
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size:12px; color:#777;">
+                  Lien direct si le bouton ne fonctionne pas :<br />
+                  <a href="{{url}}" style="color:#2e7d32;">{{url}}</a>
+                </p>
+
+                <p style="margin-top:25px;">
+                  Merci pour votre confiance,<br />
+                  <strong>Bobrain Helpdesk</strong>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td bgcolor="#f1f3f7" style="padding:15px; text-align:center; font-size:12px; color:#777;">
+                © {{year}} <!-- Footer --> Bobrain · Support & Helpdesk
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -25,6 +25,7 @@ import {
 } from 'class-validator';
 import { AuthUser } from '../session/auth-user.entity';
 import { userTypeEnum } from 'src/core/definitions/enums';
+import { Department } from './department.entity';
 
 /**
  * Front office user
@@ -83,6 +84,21 @@ export class User extends PersonCoreEntity {
   })
   @JoinColumn({ name: 'branch_id' })
   branch: Branch;
+
+  @IsUUID()
+  @IsNotEmpty()
+  @Column({ name: 'department_id', type: 'uuid', nullable: true })
+  departmentId: string;
+
+  @ApiProperty({ type: 'object', description: `Département` })
+  @ManyToOne(() => Department, (department) => department.users, {
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'department_id' })
+  department: Department;
+
 
   @ApiPropertyOptional()
   @Column({

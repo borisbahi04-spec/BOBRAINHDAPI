@@ -10,6 +10,8 @@ export class CreateRoleDto extends PickType(Role, [
   'description',
   'isActive',
   'adminPermission',
+  'sendRequesterEmail',
+  'isForOperator',
   'permissions',
 ] as const) {
   @IsArray()
@@ -29,6 +31,7 @@ export class CreateAccessToRoleDto extends PickType(AccessToRole, [
   'isManagerAccess',
   'isOwnerAccess',
   'adminPermission',
+  'sendRequesterEmail',
   'permissions',
   'fieldPermissions',
   'accessType',

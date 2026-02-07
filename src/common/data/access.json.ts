@@ -11,9 +11,9 @@ export const getDefaultAccesss = () => {
       entity: <EntityType>{
         [AbilitySubjectEnum.User]: false,
         [AbilitySubjectEnum.Branch]: false,
-        [AbilitySubjectEnum.Flash]: false,
+        [AbilitySubjectEnum.Requester]: false,
+        [AbilitySubjectEnum.Department]: false,
         [AbilitySubjectEnum.Role]: false,
-        [AbilitySubjectEnum.Setting]: false,
       },
       permissions: <PermissionsType>{
         create: false,
@@ -21,6 +21,10 @@ export const getDefaultAccesss = () => {
         edit: false,
         delete: false,
         stream: false,
+        approval: false,
+        treated: false,
+        cancel: false,
+        close: false,
       },
     },
   ];

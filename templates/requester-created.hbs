@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <body style="margin:0; padding:0; background:#f4f6f8; font-family: Arial, Helvetica, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td align="center" style="padding:30px 15px;">
+          <table width="600" style="background:#ffffff; border-radius:6px; overflow:hidden;">
+            
+            <!-- Header -->
+            <tr>
+              <td style="background:#1f4fd8; padding:20px; color:#ffffff;">
+                <h2 style="margin:0;">Nouvelle demande créée {{reference}}</h2>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td style="padding:25px; color:#333;">
+                <p>
+                  Une nouvelle demande de {{requesterName}} a été enregistrée avec les informations suivantes :
+                </p>
+
+                <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
+                  <tr>
+                    <td><strong>Référence</strong></td>
+                    <td>{{reference}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Ticket</strong></td>
+                    <td>{{ticket}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Type</strong></td>
+                    <td>{{requestType}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Priorité</strong></td>
+                    <td>{{priority}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Station</strong></td>
+                    <td>{{station}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Société</strong></td>
+                    <td>{{branch}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Date de création</strong></td>
+                    <td>{{createdAt}}</td>
+                  </tr>
+                </table>
+
+                <p style="margin-top:15px;">
+                  <strong>Objet :</strong><br />
+                  {{title}}
+                </p>
+
+                <p>
+                  <strong>Description :</strong><br />
+                  {{description}}
+                </p>
+
+                <!-- CTA -->
+                <p style="text-align:center; margin:30px 0;">
+                  <a
+                    href="{{url}}"
+                    target="_blank"
+                    style="
+                      background:#1f4fd8;
+                      color:#ffffff;
+                      padding:12px 24px;
+                      text-decoration:none;
+                      border-radius:4px;
+                      font-weight:bold;
+                      display:inline-block;
+                    "
+                  >
+                    Consulter la demande
+                  </a>
+                </p>
+
+                <p style="font-size:12px; color:#777;">
+                  Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+                  <br />
+                  <a href="{{url}}">{{url}}</a>
+                </p>
+
+                <p>
+                  Cordialement,<br />
+                  <strong>Flash Team</strong>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="background:#f1f1f1; padding:15px; text-align:center; font-size:12px; color:#777;">
+                © {{year}} Bobrain Helpdesk
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

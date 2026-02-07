@@ -1,0 +1,147 @@
+import { Injectable } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { isUUID } from 'class-validator';
+import { RequesterQueryDto } from '../dto/stat/total-stat.dto';
+import { DashboardQueryDtoEnum } from '../definitions/enums';
+import { Requester } from '../entities/requester/requester.entity';
+import { RequesterService } from './requester/requester.service';
+
+interface EmitterStat {
+  total: number;
+  breakdown: Record<string, number>;
+}
+
+interface CentreStat {
+  total: number;
+  highPriority: number;
+}
+
+interface DashboardStats {
+  globalStats: {
+    totalRequests: number;
+    highPriority: number;
+    uniqueEmitters: number;
+    uniqueTypes: number;
+  };
+  emitterStats: {
+    emitter: string;
+    total: number;
+    mostFrequentType: string;
+    breakdown: Record<string, number>;
+  }[];
+  centreStats: {
+    centre: string;
+    total: number;
+    highPriority: number;
+  }[];
+}
+
+@Injectable()
+export class StatService {
+  constructor(protected requesterService: RequesterService) {}
+
+  async getDashboardStats(query?: RequesterQueryDto): Promise<DashboardStats> {
+    const dto = plainToInstance(RequesterQueryDto, query, {
+      enableImplicitConversion: true,
+      //exposeDefaultValues: true,
+    });
+
+    const qb = this.requesterService.repository
+      .createQueryBuilder('requester')
+      .leftJoinAndSelect('requester.createdBy', 'user')
+      .leftJoinAndSelect('requester.station', 'station')
+      .leftJoinAndSelect('requester.requesttype', 'requesttype')
+      .leftJoinAndSelect('requester.branch', 'branch');
+
+    // --- Filtrage par période ---
+    switch (dto.period) {
+      case DashboardQueryDtoEnum.lastYear:
+        qb.where('YEAR(requester.createdAt) = YEAR(CURRENT_DATE) - 1');
+        break;
+      case DashboardQueryDtoEnum.currentYear:
+        qb.where('YEAR(requester.createdAt) = YEAR(CURRENT_DATE)');
+        break;
+      case DashboardQueryDtoEnum.lastMonth:
+        qb.where(
+          'YEAR(requester.createdAt) = YEAR(CURRENT_DATE - INTERVAL 1 MONTH)',
+        ).andWhere(
+          'MONTH(requester.createdAt) = MONTH(CURRENT_DATE - INTERVAL 1 MONTH)',
+        );
+        break;
+      case DashboardQueryDtoEnum.currentMonth:
+        qb.where('YEAR(requester.createdAt) = YEAR(CURRENT_DATE)').andWhere(
+          'MONTH(requester.createdAt) = MONTH(CURRENT_DATE)',
+        );
+        break;
+      default:
+        qb.where('DATEDIFF(NOW(), requester.createdAt) BETWEEN 0 AND 28');
+    }
+
+    if (isUUID(dto.branchId)) {
+      qb.andWhere('requester.branchId = :branchId', { branchId: dto.branchId });
+    }
+
+    const requests = await qb.getMany();
+
+    // --- Global stats ---
+    const totalRequests = requests.length;
+    const highPriority = requests.filter((r) => r.priority === 'HIGH').length;
+    const uniqueEmitters = new Set(
+      requests.map((r) => r.createdBy?.userData?.username || 'Unknown'),
+    ).size;
+    const uniqueTypes = new Set(
+      requests.map((r) => r.requesttype?.displayName || 'Other'),
+    ).size;
+
+    const globalStats = {
+      totalRequests,
+      highPriority,
+      uniqueEmitters,
+      uniqueTypes,
+    };
+
+    // --- Stats par émetteur ---
+    const emitterMap: Record<string, EmitterStat> = {};
+    requests.forEach((r) => {
+      const emitter = r.createdBy?.userData?.username || 'Unknown';
+      if (!emitterMap[emitter])
+        emitterMap[emitter] = { total: 0, breakdown: {} };
+      emitterMap[emitter].total += 1;
+
+      const type = r.requesttype?.displayName || 'Other';
+      emitterMap[emitter].breakdown[type] =
+        (emitterMap[emitter].breakdown[type] || 0) + 1;
+    });
+
+    const emitterStats = Object.entries(emitterMap).map(([emitter, info]) => {
+      const mostFrequentType =
+        Object.entries(info.breakdown).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+        'Unknown';
+
+      return {
+        emitter,
+        total: info.total,
+        breakdown: info.breakdown,
+        mostFrequentType,
+      };
+    });
+
+    // --- Stats par centre logistique ---
+    const centreMap: Record<string, CentreStat> = {};
+    requests.forEach((r) => {
+      const centre = r.station?.displayName || 'Unknown';
+      if (!centreMap[centre]) centreMap[centre] = { total: 0, highPriority: 0 };
+      centreMap[centre].total += 1;
+      if (r.priority === 'HIGH') centreMap[centre].highPriority += 1;
+    });
+
+    const centreStats = Object.entries(centreMap).map(([centre, info]) => ({
+      centre,
+      total: info.total,
+      highPriority: info.highPriority,
+    }));
+
+    return { globalStats, emitterStats, centreStats };
+  }
+}

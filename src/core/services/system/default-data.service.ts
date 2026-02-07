@@ -14,6 +14,12 @@ import { Access } from 'src/core/entities/user/access.entity';
 import { AccessTypeEnum } from 'src/core/definitions/enums';
 import { Setting } from 'src/core/entities/setting/setting.entity';
 import { getDefaultSettings } from 'src/common/data/setting.json';
+import { Station } from 'src/core/entities/station/station';
+import { getDefaultStations } from 'src/common/data/station.json';
+import { getDefaultRequestTypes } from 'src/common/data/requesttype.json';
+import { RequestType } from 'src/core/entities/requester/request-type';
+import { Department } from 'src/core/entities/user/department.entity';
+import { getDefaultDepartments } from 'src/common/data/department.json';
 
 @Injectable()
 export class DefaultDataService {
@@ -22,12 +28,17 @@ export class DefaultDataService {
     const acccess = await this.createAccessDefaultData();
     const roles = await this.createRolesDefaultData();
     const users = await this.createUsersDefaultData();
-
+    const stations = await this.createStationsDefaultData();
+    const requestTypes = await this.createRequestTypesDefaultData();
+    const departments = await this.createDepartmentsDefaultData();
     return {
       branches: branches.length,
       acccess: acccess.length,
       roles: roles.length,
       users: users.length,
+      stations: stations.length,
+      requestTypes: requestTypes.length,
+      departments: departments.length,
     };
   }
 
@@ -43,6 +54,21 @@ export class DefaultDataService {
     }
     return branches;
   }
+
+   async createDepartmentsDefaultData(): Promise<Department[]> {
+    const defaultDepartments = getDefaultDepartments();
+    const departments: Department[] = [];
+    let exists: number;
+    for (const dto of defaultDepartments) {
+      exists = await Department.countBy({ displayName: dto.displayName });
+      if (exists <= 0) {
+        departments.push(await Department.save(dto as any));
+      }
+    }
+    return departments;
+  }
+
+
 
   async createSettingsDefaultData(): Promise<Setting[]> {
     const defaultSettings = getDefaultSettings();
@@ -93,7 +119,7 @@ export class DefaultDataService {
     const defaultUsers = getDefaultUsers();
     let exists: number;
     const branches = await Branch.findBy({});
-    const roles = await Role.findBy({ name: AccessTypeEnum.owner });
+    const roles = await Role.findBy({ name: AccessTypeEnum.admin });
 
     const users: User[] = await User.findBy({});
     if (users.length > 0 || branches.length <= 0 || roles.length <= 0) {
@@ -126,4 +152,35 @@ export class DefaultDataService {
     }
     return users;
   }
+
+    async createStationsDefaultData(): Promise<Station[]> {
+    const defaultStations = getDefaultStations();
+    const stations: Station[] = [];
+    let exists: number;
+    for (const dto of defaultStations) {
+      exists = await Station.countBy({ displayName: dto.displayName });
+      if (exists <= 0) {
+        stations.push(await Station.save(dto as Station));
+      }
+    }
+    return stations;
+  }
+
+
+   async createRequestTypesDefaultData(): Promise<RequestType[]> {
+    const defaultRequestTypes = getDefaultRequestTypes();
+    const requestTypes: RequestType[] = [];
+    let exists: number;
+    for (const dto of defaultRequestTypes) {
+      exists = await RequestType.countBy({ displayName: dto.displayName });
+      if (exists <= 0) {
+        requestTypes.push(await RequestType.save(dto as RequestType));
+      }
+    }
+    return requestTypes;
+  }
+
+
+  
+
 }

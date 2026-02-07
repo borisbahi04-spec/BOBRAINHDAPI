@@ -69,6 +69,18 @@ export class AccessToRole extends CoreEntity {
   @Column({ name: 'admin_permission', nullable: true, default: false })
   adminPermission: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({ required: false })
+  @Column({ name: 'send_requester_email', nullable: true, default: false })
+  sendRequesterEmail: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({ required: false })
+  @Column({ name: 'is_for_operator', nullable: true, default: false })
+  isForOperator: boolean;
+
   @IsOptional()
   @ApiProperty({ required: false })
   @Column({ type: 'simple-json', nullable: true })

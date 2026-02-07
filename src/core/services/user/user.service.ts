@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Not, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 import { AuthUserData } from '../../classes/auth-user.data';
 import { AuthUser } from '../../entities/session/auth-user.entity';
 import { User } from '../../entities/user/user.entity';
@@ -222,6 +222,23 @@ export class UserService extends AbstractService<User> {
     return {};
   }
 
+  async getMailRecipients(): Promise<string[]> {
+    const users = await this._repository.find({
+      relations: { role: true },
+      where: {
+        role: { sendRequesterEmail: true, isForOperator: false },
+        email: Not(IsNull()),
+      },
+    });
+
+    return users
+      .map((user) => user.email)
+      .filter(
+        (email): email is string =>
+          !!email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+      );
+  }
+
   validateEmail(email: string) {
     const re = /\S+@\S+\.\S+/;
     return re.test(String(email).toLowerCase());
@@ -263,7 +280,7 @@ export class UserService extends AbstractService<User> {
       username: username,
       password: newpassword,
     };
-    await this.mailerService.sendEmail(email, subject, template, ctx);
+    await this.mailerService.sendEmails(email, subject, template, ctx);
     return newpassword;
   }
 }

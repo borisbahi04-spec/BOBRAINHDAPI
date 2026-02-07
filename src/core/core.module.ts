@@ -24,11 +24,22 @@ import { ConfigService } from './services/system/config.service';
 import { RunInTransactionService } from './services/transaction/runInTransaction.service';
 import { Access } from './entities/user/access.entity';
 import { BranchToUser } from './entities/subsidiary/branch-to-user.entity';
-import { Flash } from './entities/flash/flash.entity';
-import { FlashService } from './services/flash/flash.service';
-import { FlashController } from './controllers/flash/flash.controller';
-import { FlashSubscriber } from './services/flash/flash.subscriber';
-
+import { Station } from './entities/station/station';
+import { StationController } from './controllers/station/station.controller';
+import { StationService } from './services/station/station.service';
+import { RequestType } from './entities/requester/request-type';
+import { RequestTypeController } from './controllers/requester/request-type.controller';
+import { RequestTypeService } from './services/requester/request-type.service';
+import { RequesterController } from './controllers/requester/requester.controller';
+import { RequesterService } from './services/requester/requester.service';
+import { RequesterSubscriber } from './services/requester/requester.subscriber';
+import { Department } from './entities/user/department.entity';
+import { DepartmentService } from './services/user/department.service';
+import { DepartmentController } from './controllers/user/department.controller';
+import { RequesterStatusHistory } from './entities/requester/requester-status-history.entity';
+import { Requester } from './entities/requester/requester.entity';
+import { StatController } from './controllers/stat.controller';
+import { StatService } from './services/stat.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -40,7 +51,11 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
       Role,
       Branch,
       BranchToUser,
-      Flash,
+      Station,
+      RequestType,
+      Requester,
+      Department,
+      RequesterStatusHistory,
     ]),
   ],
   controllers: [
@@ -48,11 +63,16 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
     RoleController,
     AccessController,
     BranchController,
-    FlashController,
+    StationController,
+    RequestTypeController,
+    RequesterController,
+    DepartmentController,
+    StatController,
   ],
   providers: [
     RunInTransactionService,
     UserService,
+    DepartmentService,
     AuthUserService,
     AuthLogService,
     RoleService,
@@ -60,8 +80,11 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
     BranchService,
     ConfigService,
     DefaultDataService,
-    FlashService,
-    FlashSubscriber,
+    StationService,
+    RequestTypeService,
+    RequesterService,
+    RequesterSubscriber,
+    StatService,
   ],
   exports: [
     TypeOrmModule,
@@ -69,7 +92,6 @@ import { FlashSubscriber } from './services/flash/flash.subscriber';
     AuthUserService,
     AuthLogService,
     RunInTransactionService,
-    FlashService,
   ],
 })
 export class CoreModule implements OnApplicationBootstrap {

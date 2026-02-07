@@ -1,0 +1,86 @@
+import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { ApiAuthJwtHeader } from '../../modules/auth/decorators/api-auth-jwt-header.decorator';
+import { ApiRequestIssuerHeader } from '../../modules/auth/decorators/api-request-issuer-header.decorator';
+import { CustomApiErrorResponse } from '@app/nestjs';
+import { ApiTags } from '@nestjs/swagger';
+import { RequesterQueryDto } from '../dto/stat/total-stat.dto';
+import { StatService } from '../services/stat.service';
+
+@ApiAuthJwtHeader()
+@ApiRequestIssuerHeader()
+@CustomApiErrorResponse()
+@ApiTags('stat')
+@Controller('stat')
+export class StatController {
+  constructor(private service: StatService) {}
+
+  @Get('interventions')
+  @HttpCode(HttpStatus.OK)
+  async getDashboard(@Query() query?: RequesterQueryDto): Promise<any> {
+    return this.service.getDashboardStats(query);
+  }
+
+  /*@Get('total-count')
+  @HttpCode(HttpStatus.OK)
+  async totalCount(@Query() query?: TotalCountStatQueryDto) {
+    return this.service.computeTotalCount(query);
+  }
+
+  @ApiParam({
+    name: 'time',
+    enum: StatTimeEnum,
+    enumName: 'StatTimeEnum',
+  })
+  @Get(':time/total-amount')
+  @HttpCode(HttpStatus.OK)
+  async totalAmountByTime(
+    @Param('time', new ParseEnumPipe(StatTimeEnum)) time: StatTimeEnum,
+    @Query() query?: TotalStatQueryDto,
+  ) {
+    return this.service.computeTotalAmountByTime(time, query);
+  }
+
+  @ApiParam({
+    name: 'time',
+    enum: StatProductTypeTimeEnum,
+    enumName: 'StatProductTypeTimeEnum',
+  })
+  @Get('sale-by/product-type/:time/total')
+  @HttpCode(HttpStatus.OK)
+  async saleTotalByProductType(
+    @Param('time', new ParseEnumPipe(StatProductTypeTimeEnum))
+    time: StatProductTypeTimeEnum,
+    @Query() query?: SaleTotalByProductTypeQueryDto,
+  ) {
+    return this.service.computeSaleTotalByProductType(time, query);
+  }
+
+  @ApiParam({
+    name: 'time',
+    enum: StatProductTypeTimeEnum,
+    enumName: 'StatProductTypeTimeEnum',
+  })
+  @Get('sale-by/branch/:time/total')
+  @HttpCode(HttpStatus.OK)
+  async saleTotalByBranch(
+    @Param('time', new ParseEnumPipe(StatBranchTimeEnum))
+    time: StatBranchTimeEnum,
+  ) {
+    return {} as any; //this.service.computeSaleTotalByBranch(time);
+  }
+
+  @ApiParam({
+    name: 'time',
+    enum: StatInsuranceCompanyTimeEnum,
+    enumName: 'StatInsuranceCompanyTimeEnum',
+  })
+  @Get('sale-by/insurance-company/:time/total')
+  @HttpCode(HttpStatus.OK)
+  async saleTotalByInsuranceCompany(
+    @Param('time', new ParseEnumPipe(StatInsuranceCompanyTimeEnum))
+    time: StatInsuranceCompanyTimeEnum,
+    @Query() query?: SaleTotalByInsuranceCompanyQueryDto,
+  ) {
+    return this.service.computeSaleTotalByInsuranceCompany(time, query);
+  }*/
+}

@@ -43,7 +43,7 @@ export class FlashController {
     // Permission check
     await authUser?.throwUnlessCan(
       AbilityActionEnum.read,
-      AbilitySubjectEnum.Flash,
+      AbilitySubjectEnum.Requester,
     );
 
     const options = buildFilterFromApiSearchParams(

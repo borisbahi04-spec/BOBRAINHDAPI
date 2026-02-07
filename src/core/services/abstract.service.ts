@@ -71,6 +71,8 @@ export abstract class AbstractService<T extends BaseCoreEntity> {
     return await this.repository.save(entity);
   }
 
+   
+
   async deleteRecord(optionsWhere: FindOptionsWhere<T>) {
     const entity = await this.repository.findOneBy(optionsWhere);
     if (!entity) {

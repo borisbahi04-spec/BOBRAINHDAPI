@@ -233,7 +233,7 @@ export class AuthUser extends CoreEntity {
           break;
         case AbilitySubjectEnum.User:
         case AbilitySubjectEnum.AuthUser:
-        case AbilitySubjectEnum.Flash:
+        case AbilitySubjectEnum.Requester:
         case AbilitySubjectEnum.Role:
           rule.conditions = _.merge({}, rule.conditions, {
             branchId: { $eq: this.branchId },

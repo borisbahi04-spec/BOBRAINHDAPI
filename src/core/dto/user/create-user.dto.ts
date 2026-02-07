@@ -9,6 +9,7 @@ export class CreateUserDto extends PickType(User, [
   'email',
   'phoneNumber',
   'branchId',
+  'departmentId',
   'roleId',
 ] as const) {
   @ApiPropertyOptional({ minLength: 3, description: `Nom` })
@@ -23,7 +24,11 @@ export class CreateUserDto extends PickType(User, [
   @IsOptional()
   @IsString()
   email: string;
-  @ApiPropertyOptional({  description: `type` })
+  @ApiPropertyOptional({ description: `Departement` })
+  @IsOptional()
+  @IsString()
+  departementId: string;
+  @ApiPropertyOptional({ description: `type` })
   @IsOptional()
   @IsString()
   type: userTypeEnum;
