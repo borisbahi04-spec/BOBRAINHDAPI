@@ -1,7 +1,7 @@
 {
-  "name": "flash-backend",
+  "name": "helpdesk-backend",
   "version": "0.1.0",
-  "description": "Net vision app backend api",
+  "description": "heldesk app backend api",
   "author": {
     "name": "Bahi Boris",
     "email": "bahiboris@gmail.com"
