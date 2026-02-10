@@ -115,7 +115,8 @@ export class RequesterService extends AbstractService<Requester> {
   const host =
     this.request.headers['x-forwarded-host'] ?? this.request.get('host');
 
-  return `${protocol}://${host}`;
+  const port= this.request.headers['x-forwarded-port'] ?? this.request.get('port');
+  return `${protocol}://${host}${port ? `:${port}` : ''}`;
 }
 
   get repository(): Repository<Requester> {
@@ -201,9 +202,7 @@ export class RequesterService extends AbstractService<Requester> {
 
 private buildRequesterCreatedMailPayload(requester: Requester) {
     return {
-      requesterName: `${requester.createdBy?.userData?.firstName ?? ''} ${
-        requester.createdBy?.userData?.lastName ?? ''
-      }`.trim(),
+      requesterName: `${requester.createdBy?.userData?.username ?? ''}`,
       reference: requester.reference,
       ticket: requester.ticket,
       title: requester.title,
