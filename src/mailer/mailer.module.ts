@@ -11,8 +11,8 @@ import { MailerSenderService } from './services/mailer.service';
         secure: true,
         ignoreTLS: true,
         auth: {
-          user: process.env.APP_EMAIL_USER??'bahiboris@gmail.com',
-          pass: process.env.APP_EMAIL_PASSWORD??'pysn hjpu kbkd cmry',
+          user: process.env.APP_EMAIL_USER,
+          pass: process.env.APP_EMAIL_PASSWORD,
         },
         /*tls: {
           ciphers: 'TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256',
