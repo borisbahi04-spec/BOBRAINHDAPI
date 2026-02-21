@@ -205,27 +205,6 @@ private async saveAndForward(payload: any, token: string , client: Socket) {
   return saved;
 }
 
-/*async purgeExceptLast(station: string, keep = 1) {
-  await Flash.getRepository()
-    .createQueryBuilder()
-    .delete()
-    .from(Flash)
-    .where(`station = :station`)
-    .andWhere(
-      `id NOT IN (
-        SELECT id FROM (
-          SELECT id
-          FROM flash
-          WHERE station = :station
-          ORDER BY created_at DESC
-          LIMIT :keep
-        ) AS t
-      )`
-    )
-    .setParameters({ station, keep })
-    .execute();
-}*/
-
 
 async purgeOld(station: string, keep = 1) {
   await Flash.getRepository().query(

@@ -19,7 +19,6 @@ export class MailerSenderService {
     if (recipients.length === 0) {
       return;
     }
-
     const sendTasks = recipients.map((email) =>
       this.mailerService.sendMail({
         to: email,
@@ -28,11 +27,12 @@ export class MailerSenderService {
         context: payload,
       }),
     );
+    
 
     const results = await Promise.allSettled(sendTasks);
 
     const failed = results.filter((r) => r.status === 'rejected');
-
+    console.log('Email send results:',failed, results);
     if (failed.length > 0) {
       this.logger.warn(
         `${failed.length} email(s) non envoyés sur ${recipients.length}`,

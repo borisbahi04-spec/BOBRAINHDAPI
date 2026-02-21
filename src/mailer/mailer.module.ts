@@ -6,13 +6,13 @@ import { MailerSenderService } from './services/mailer.service';
   imports: [
     MailerModule.forRoot({
       transport: {
-        host:'smtp.gmail.com',
-        port:465,
-        secure: true,
-        ignoreTLS: true,
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        ignoreTLS: false,
         auth: {
-          user: process.env.APP_EMAIL_USER,
-          pass: process.env.APP_EMAIL_PASSWORD,
+          user: 'dekeloil26@gmail.com',
+          pass: 'eryzjmsnbtyytvxx',
         },
         /*tls: {
           ciphers: 'TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256',
