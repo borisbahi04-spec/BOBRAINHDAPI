@@ -177,15 +177,18 @@ export class RequesterService extends AbstractService<Requester> {
       entity[meta.dateField] = new Date();
       entity[meta.userField] = authUser?.id;
     }
-
     entity.status = toStatus;
-    console.log('mailConfig888',toStatus)
 
     const requesterWithRelations= await this.readOneById(entity.id);
     const recipients = await this.userService.getMailRecipients();
+    console.log('AZAZAZAZSdsdsdssd',recipients)
+
     if (recipients.length === 0) return entity;
+    console.log('AZAZAZAZSDSDSSFRSSSSRE',"sds")
     // 📧 ENVOI MAIL SELON LE STATUT
     const mailConfig = MAIL_ACTION_CONFIG[toStatus];
+    console.log('AZAZAZAZSDSDSSFRSSSSRE',"sds")
+
     if (mailConfig) {
       const payload = this.buildRequesterCreatedMailPayload(requesterWithRelations);
       await this.sendRequesterCreatedEmail({

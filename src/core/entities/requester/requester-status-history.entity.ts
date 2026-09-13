@@ -1,4 +1,4 @@
-import { Column, ManyToOne } from 'typeorm';
+import { Column, JoinColumn, ManyToOne } from 'typeorm';
 import { CoreEntity } from '../base/core.entity';
 import { instanceToPlain } from 'class-transformer';
 import { Entity } from 'typeorm';
@@ -8,8 +8,12 @@ import { Requester } from './requester.entity';
 
 @Entity()
 export class RequesterStatusHistory extends CoreEntity {
-  @ManyToOne(() => Requester, { onDelete: 'CASCADE' })
-  requester: Requester;
+@Column({ name: 'requester_id', type: 'uuid', nullable: true })
+requesterId: string;
+
+@ManyToOne(() => Requester, { onDelete: 'CASCADE' })
+@JoinColumn({ name: 'requester_id' })
+requester: Requester;
 
   @Column({
     type: 'enum',

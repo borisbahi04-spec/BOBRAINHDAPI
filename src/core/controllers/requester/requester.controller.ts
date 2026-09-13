@@ -157,6 +157,7 @@ export class RequesterController {
       this.service.repository,
       query as ApiSearchOneParamOptions,
     );
+    
     return this.service.readOneRecord({
       ...options,
       where: { ...options?.where, id: requester.id },
