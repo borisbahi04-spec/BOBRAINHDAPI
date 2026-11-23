@@ -8,7 +8,7 @@
             
             <!-- Header -->
             <tr>
-              <td style="background:#1f4fd8; padding:20px; color:#ffffff;">
+              <td style="background:#174E26; padding:20px; color:#ffffff;">
                 <h2 style="margin:0;">Nouvelle demande créée {{reference}}</h2>
               </td>
             </tr>
@@ -51,14 +51,25 @@
                   </tr>
                 </table>
 
+                <table width="100%" cellpadding="6" cellspacing="0" style="margin-top:15px; border-collapse:collapse; font-size:14px;">
+                  <tr>
+                    <td style="width:40%;"><strong>Agent labo concerné</strong></td>
+                    <td>{{labAgent}}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Opératrice</strong></td>
+                    <td>{{operator}}</td>
+                  </tr>
+                </table>
+
                 <p style="margin-top:15px;">
-                  <strong>Objet :</strong><br />
-                  {{title}}
+                  <strong>Description du problème :</strong><br />
+                  {{description}}
                 </p>
 
                 <p>
-                  <strong>Description :</strong><br />
-                  {{description}}
+                  <strong>Correction à réaliser :</strong><br />
+                  {{correction}}
                 </p>
 
                 <!-- CTA -->
@@ -67,7 +78,7 @@
                     href="{{url}}"
                     target="_blank"
                     style="
-                      background:#1f4fd8;
+                      background:#174E26;
                       color:#ffffff;
                       padding:12px 24px;
                       text-decoration:none;

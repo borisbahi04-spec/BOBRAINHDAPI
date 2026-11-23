@@ -15,6 +15,8 @@ import { RequestType } from './request-type';
 import { PriorityEnum, RequesterStatusEnum } from 'src/core/definitions/enums';
 import { Branch } from '../subsidiary/branch.entity';
 import { AuthUser } from '../session/auth-user.entity';
+import { LabAgent } from './lab-agent.entity';
+import { User } from '../user/user.entity';
 
 @Entity()
 export class Requester extends CoreEntity {
@@ -35,16 +37,56 @@ export class Requester extends CoreEntity {
   @Column({ nullable: true, default: PriorityEnum.Normal })
   priority: string;
 
+  /**
+   * @deprecated Champ conservé pour l'historique (n'est plus saisi).
+   */
+  @IsOptional()
   @IsString()
-  @ApiProperty({ description: `title de la demande`, required: false })
+  @ApiProperty({ description: `Ancien titre (déprécié)`, required: false })
   @Column({ nullable: true })
   title: string;
 
   @IsString()
-  @IsOptional()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Description du problème`, required: true })
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @IsString()
+  @ApiProperty({ description: `Correction à réaliser`, required: true })
+  @Column({ name: 'correction', type: 'text', nullable: true })
+  correction: string;
+
+  @IsUUID()
+  @IsOptional()
+  @ApiPropertyOptional({ description: `Agent labo ayant commis l'erreur` })
+  @Index()
+  @Column({ name: 'lab_agent_id', type: 'uuid', nullable: true })
+  labAgentId: string;
+
+  @ApiPropertyOptional({ type: () => LabAgent })
+  @ManyToOne(() => LabAgent, (agent) => agent.requesters, {
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'lab_agent_id' })
+  labAgent: LabAgent;
+
+  @IsUUID()
+  @IsOptional()
+  @ApiPropertyOptional({ description: `Opératrice concernée` })
+  @Index()
+  @Column({ name: 'operator_id', type: 'uuid', nullable: true })
+  operatorId: string;
+
+  @ApiPropertyOptional({ type: () => User })
+  @ManyToOne(() => User, {
+    onUpdate: 'CASCADE',
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'operator_id' })
+  operator: User;
 
   @IsString()
   @ApiProperty({ description: `Statut` })

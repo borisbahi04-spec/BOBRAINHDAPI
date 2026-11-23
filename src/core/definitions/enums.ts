@@ -42,6 +42,8 @@ export enum StatProductTypeTimeEnum {
 
 export enum DashboardQueryDtoEnum {
   lastYear = 'lastYear',
+  yearMinus2 = 'yearMinus2',
+  yearMinus3 = 'yearMinus3',
   currentYear = 'currentYear',
   lastMonth = 'lastMonth',
   currentMonth = 'currentMonth',

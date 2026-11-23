@@ -9,7 +9,6 @@ import {
 } from 'src/common';
 import { Branch } from '../../entities/subsidiary/branch.entity';
 import { User } from '../../entities/user/user.entity';
-import { isEmpty } from 'lodash';
 import { Access } from 'src/core/entities/user/access.entity';
 import { AccessTypeEnum } from 'src/core/definitions/enums';
 import { Setting } from 'src/core/entities/setting/setting.entity';
@@ -115,42 +114,44 @@ export class DefaultDataService {
     return roles;
   }
 
+  /**
+   * Crée les utilisateurs par défaut définis dans le .env (APP_DEFAULT_USER_<n>_*),
+   * uniquement si la table user est vide (premier démarrage).
+   */
   private async createUsersDefaultData(): Promise<User[]> {
     const defaultUsers = getDefaultUsers();
-    let exists: number;
     const branches = await Branch.findBy({});
-    const roles = await Role.findBy({ name: AccessTypeEnum.admin });
-
-    const users: User[] = await User.findBy({});
-    if (users.length > 0 || branches.length <= 0 || roles.length <= 0) {
+    const existing = await User.count();
+    if (existing > 0 || branches.length <= 0 || defaultUsers.length === 0) {
       return [];
     }
 
-    let user: User;
+    const created: User[] = [];
     for (const dto of defaultUsers) {
-      exists = await User.countBy({ username: dto.username });
-      if (exists <= 0) {
-        user = User.create(dto);
+      if ((await User.countBy({ username: dto.username })) > 0) continue;
 
-        if (!isEmpty(dto.newPassword)) {
-          await user.setNewPassword(dto.newPassword);
-        }
-        if(dto.username=="admin"){
-          user.roleId=roles[0].id;
-        }else{
-        const roles = await Role.findBy({ name: AccessTypeEnum.admin });
-         user.roleId=roles[0].id;
-        }
-        users.push(
-          await User.save({
-            ...user,
-            branchId: branches[0].id,
-            //roleId: roles[0].id,
-          }),
-        );
+      const role =
+        (await Role.findOneBy({ name: dto.roleName })) ??
+        (await Role.findOneBy({ name: AccessTypeEnum.admin }));
+      if (!role) {
+        console.warn(`*** [DefaultUsers] rôle "${dto.roleName}" introuvable : "${dto.username}" ignoré`);
+        continue;
       }
+
+      if (process.env.NODE_ENV === 'production' && (dto.newPassword.length < 8 || dto.newPassword === dto.username)) {
+        console.warn(`*** [DefaultUsers] mot de passe faible pour "${dto.username}" : changez-le dès la première connexion`);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { roleName, newPassword, ...fields } = dto;
+      const user = User.create(fields as any) as unknown as User;
+      await user.setNewPassword(newPassword);
+      user.roleId = role.id;
+      user.branchId = branches[0].id;
+      created.push(await User.save(user));
+      console.log(`*** [DefaultUsers] utilisateur "${dto.username}" créé (rôle ${role.name})`);
     }
-    return users;
+    return created;
   }
 
     async createStationsDefaultData(): Promise<Station[]> {

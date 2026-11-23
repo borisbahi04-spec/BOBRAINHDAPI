@@ -2,14 +2,17 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { PaginatedService } from '@app/typeorm';
 import { AbstractService } from '../abstract.service';
 import { CreateRequesterDto } from 'src/core/dto/requester/create-requester.dto';
+import { UpdateRequesterDto } from 'src/core/dto/requester/update-requester.dto';
 import { REQUEST_AUTH_USER_KEY } from 'src/modules/auth/definitions/constants';
 import { AuthUser } from 'src/core/entities/session/auth-user.entity';
-import { RequesterStatusEnum } from 'src/core/definitions/enums';
+import { PriorityEnum, RequesterStatusEnum } from 'src/core/definitions/enums';
 import { Requester } from 'src/core/entities/requester/requester.entity';
+import { LabAgent } from 'src/core/entities/requester/lab-agent.entity';
+import { User } from 'src/core/entities/user/user.entity';
 import { MailerSenderService } from 'src/mailer/services/mailer.service';
 import { UserService } from '../user/user.service';
 import { ConfigService } from '@nestjs/config';
@@ -17,82 +20,47 @@ import { Logger4jsService } from '@app/nestjs';
 import { MailOptions } from 'src/core/definitions/interfaces';
 import { MAIL_ACTION_CONFIG } from 'src/core/definitions/constants';
 
+type DateFields = 'approvedAt' | 'rejectedAt' | 'cancelledAt' | 'closedAt' | 'treatedAt';
+type UserFields = 'approvedById' | 'rejectedById' | 'cancelledById' | 'treatedById' | 'closedById';
 
-type DateFields =
-  | 'approvedAt'
-  | 'rejectedAt'
-  | 'cancelledAt'
-  | 'closedAt'
-  | 'treatedAt';
-
-type UserFields =
-  | 'approvedById'
-  | 'rejectedById'
-  | 'cancelledById'
-  | 'treatedById'
-  | 'closedById';
-
-
-
-
-
-
-const STATUS_META: Partial<
-  Record<
-    RequesterStatusEnum,
-    {
-      dateField: DateFields;
-      userField: UserFields;
-    }
-  >
-> = {
-  [RequesterStatusEnum.Approved]: {
-    dateField: 'approvedAt',
-    userField: 'approvedById',
-  },
-  [RequesterStatusEnum.Rejected]: {
-    dateField: 'rejectedAt',
-    userField: 'rejectedById',
-  },
-  [RequesterStatusEnum.Cancelled]: {
-    dateField: 'cancelledAt',
-    userField: 'cancelledById',
-  },
-  [RequesterStatusEnum.Closed]: {
-    dateField: 'closedAt',
-    userField: 'closedById',
-  },
-  [RequesterStatusEnum.Treated]: {
-    dateField: 'treatedAt',
-    userField: 'treatedById',
-  },
+const STATUS_META: Partial<Record<RequesterStatusEnum, { dateField: DateFields; userField: UserFields }>> = {
+  [RequesterStatusEnum.Approved]: { dateField: 'approvedAt', userField: 'approvedById' },
+  [RequesterStatusEnum.Rejected]: { dateField: 'rejectedAt', userField: 'rejectedById' },
+  [RequesterStatusEnum.Cancelled]: { dateField: 'cancelledAt', userField: 'cancelledById' },
+  [RequesterStatusEnum.Closed]: { dateField: 'closedAt', userField: 'closedById' },
+  [RequesterStatusEnum.Treated]: { dateField: 'treatedAt', userField: 'treatedById' },
 };
 
-const REQUESTER_TRANSITIONS: Record<
-  RequesterStatusEnum,
-  RequesterStatusEnum[]
-> = {
+export const REQUESTER_TRANSITIONS: Record<RequesterStatusEnum, RequesterStatusEnum[]> = {
   [RequesterStatusEnum.Open]: [
     RequesterStatusEnum.Approved,
     RequesterStatusEnum.Rejected,
     RequesterStatusEnum.Cancelled,
   ],
-
-  [RequesterStatusEnum.Approved]: [
-    RequesterStatusEnum.Treated,
-    RequesterStatusEnum.Cancelled,
-  ],
-
+  [RequesterStatusEnum.Approved]: [RequesterStatusEnum.Treated, RequesterStatusEnum.Cancelled],
   [RequesterStatusEnum.Treated]: [RequesterStatusEnum.Closed],
-
   [RequesterStatusEnum.Rejected]: [],
   [RequesterStatusEnum.Cancelled]: [],
   [RequesterStatusEnum.Closed]: [],
 };
 
+const DETAIL_RELATIONS = {
+  requesttype: true,
+  station: true,
+  branch: true,
+  labAgent: true,
+  operator: true,
+  createdBy: true,
+  approvedBy: true,
+  rejectedBy: true,
+  treatedBy: true,
+  closedBy: true,
+  cancelledBy: true,
+};
+
 @Injectable()
 export class RequesterService extends AbstractService<Requester> {
-  public NOT_FOUND_MESSAGE = `Requester non trouvé`;
+  public NOT_FOUND_MESSAGE = `Demande non trouvée`;
 
   constructor(
     @InjectRepository(Requester)
@@ -107,156 +75,286 @@ export class RequesterService extends AbstractService<Requester> {
     super();
   }
 
-  
-  private getBaseUrl(): string {
-  const protocol =
-    this.request.headers['x-forwarded-proto'] ?? this.request.protocol;
-
-  const host =
-    this.request.headers['x-forwarded-host'] ?? this.request.get('host');
-
-  const port= this.request.headers['x-forwarded-port'] ?? this.request.get('port');
-  return `${protocol}://${host}${port ? `:${port}` : ''}`;
-}
-
   get repository(): Repository<Requester> {
     return this._repository;
   }
 
+  private get authUser(): AuthUser {
+    return this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
+  }
+
+  private get labAgentRepository(): Repository<LabAgent> {
+    return this._repository.manager.getRepository(LabAgent);
+  }
+
+  private get userRepository(): Repository<User> {
+    return this._repository.manager.getRepository(User);
+  }
+
+  private getBaseUrl(): string {
+    const protocol = this.request.headers['x-forwarded-proto'] ?? this.request.protocol;
+    const host = this.request.headers['x-forwarded-host'] ?? this.request.get('host');
+    return `${protocol}://${host}`;
+  }
+
+  /* ----------------------------------------------------------------------- */
+  /*                               NORMALISATION                             */
+  /* ----------------------------------------------------------------------- */
+
+  /** "ay-0001 ,az-1234" -> "AY-0001, AZ-1234" (sans doublons) */
+  static normalizeTicket(ticket: string): string {
+    const parts = String(ticket ?? '')
+      .split(',')
+      .map((t) => t.trim().toUpperCase())
+      .filter(Boolean);
+    return Array.from(new Set(parts)).join(', ');
+  }
+
+  private async assertLabAgent(labAgentId: string, currentId?: string) {
+    const agent = await this.labAgentRepository.findOneBy({ id: labAgentId });
+    if (!agent) throw new BadRequestException(`Agent labo introuvable`);
+    // un agent désactivé reste accepté s'il était déjà rattaché à la demande
+    if (!agent.isActive && agent.id !== currentId) {
+      throw new BadRequestException(`L'agent labo "${agent.displayName}" est désactivé`);
+    }
+  }
+
+  private async assertOperator(operatorId: string) {
+    const operator = await this.userRepository.findOne({
+      where: { id: operatorId },
+      relations: { role: true },
+    });
+    if (!operator || !operator.isActive) {
+      throw new BadRequestException(`Opératrice introuvable ou inactive`);
+    }
+    if (!operator.role?.isForOperator) {
+      throw new BadRequestException(
+        `L'utilisateur "${operator.username}" n'a pas un rôle d'opératrice`,
+      );
+    }
+  }
+
+  /**
+   * Opératrice (facultative) :
+   *  - champ absent  -> l'utilisatrice connectée si son rôle est opérateur
+   *  - null / vide   -> aucune opératrice
+   */
+  private resolveOperatorId(operatorId?: string | null): string | null {
+    if (operatorId) return operatorId;
+    if (operatorId === undefined && this.authUser?.role?.isForOperator) return this.authUser.userId;
+    return null;
+  }
+
+  /* ----------------------------------------------------------------------- */
+  /*                                   CRUD                                  */
+  /* ----------------------------------------------------------------------- */
+
   async createRecord(dto: CreateRequesterDto): Promise<Requester> {
-  const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
+    const authUser = this.authUser;
+    const operatorId = this.resolveOperatorId(dto.operatorId);
 
-  const requester = this._repository.create({
-    ...dto,
-    branchId: authUser.branchId,
-  });
+    if (dto.labAgentId) await this.assertLabAgent(dto.labAgentId);
+    if (operatorId) await this.assertOperator(operatorId);
 
-  const savedRequester = await super.createRecord(requester);
-  const requesterWithRelations= await this.readOneById(savedRequester.id);
-  const recipients = await this.userService.getMailRecipients();
-  if (recipients.length === 0) return savedRequester;
+    const requester = this._repository.create({
+      ticket: RequesterService.normalizeTicket(dto.ticket),
+      priority: dto.priority ?? PriorityEnum.Normal,
+      stationId: dto.stationId,
+      requesttypeId: dto.requesttypeId,
+      labAgentId: dto.labAgentId || null,
+      operatorId,
+      description: dto.description.trim(),
+      correction: dto.correction.trim(),
+      status: RequesterStatusEnum.Open,
+      branchId: authUser?.branchId,
+    });
 
-  const payload = this.buildRequesterCreatedMailPayload(requesterWithRelations);
-  await this.sendRequesterCreatedEmail({
-    recipients,
-    subject:MAIL_ACTION_CONFIG.Open.subject,
-    template: MAIL_ACTION_CONFIG.Open.template,
-    payload,
-  });
+    const saved = await super.createRecord(requester);
+    await this.notify(saved.id, RequesterStatusEnum.Open);
+    return saved;
+  }
 
-  return savedRequester;
-}
-  async changeStatus(
-    optionsWhere: FindOptionsWhere<Requester>,
-    toStatus: RequesterStatusEnum,
-  ) {
-    const entity = await this.repository.findOneBy(optionsWhere);
-    if (!entity) {
-      throw new BadRequestException(this.NOT_FOUND_MESSAGE);
+  async updateRequester(id: string, dto: UpdateRequesterDto): Promise<Requester> {
+    const entity = await this._repository.findOneBy({ id });
+    if (!entity) throw new BadRequestException(this.NOT_FOUND_MESSAGE);
+
+    if (entity.status !== RequesterStatusEnum.Open) {
+      throw new BadRequestException(
+        `Seules les demandes au statut "Open" peuvent être modifiées (statut actuel : ${entity.status})`,
+      );
     }
 
-    const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
-    const fromStatus = entity.status;
+    if (dto.labAgentId) await this.assertLabAgent(dto.labAgentId, entity.labAgentId);
+    if (dto.operatorId) await this.assertOperator(dto.operatorId);
 
-    // 🔒 Interdire changement identique
+    const data: Partial<Requester> = {
+      ...(dto.ticket !== undefined && { ticket: RequesterService.normalizeTicket(dto.ticket) }),
+      ...(dto.priority !== undefined && { priority: dto.priority }),
+      ...(dto.stationId !== undefined && { stationId: dto.stationId }),
+      ...(dto.requesttypeId !== undefined && { requesttypeId: dto.requesttypeId }),
+      // null / '' => on retire l'agent ou l'opératrice (champs facultatifs)
+      ...(dto.labAgentId !== undefined && { labAgentId: dto.labAgentId || null }),
+      ...(dto.operatorId !== undefined && { operatorId: dto.operatorId || null }),
+      ...(dto.description !== undefined && { description: dto.description.trim() }),
+      ...(dto.correction !== undefined && { correction: dto.correction.trim() }),
+    };
+
+    return super.updateRecord({ id }, data);
+  }
+
+  async changeStatus(optionsWhere: FindOptionsWhere<Requester>, toStatus: RequesterStatusEnum) {
+    if (!Object.values(RequesterStatusEnum).includes(toStatus)) {
+      throw new BadRequestException(`Statut inconnu : ${toStatus}`);
+    }
+
+    const entity = await this.repository.findOneBy(optionsWhere);
+    if (!entity) throw new BadRequestException(this.NOT_FOUND_MESSAGE);
+
+    const fromStatus = entity.status as RequesterStatusEnum;
     if (fromStatus === toStatus) {
       throw new BadRequestException(`Le ticket est déjà au statut ${toStatus}`);
     }
 
-    // 🔁 Vérification des transitions
-    const allowedTransitions = REQUESTER_TRANSITIONS[fromStatus];
-    if (!allowedTransitions.includes(toStatus)) {
-      throw new BadRequestException(
-        `Transition interdite : ${fromStatus} → ${toStatus}`,
-      );
+    const allowed = REQUESTER_TRANSITIONS[fromStatus] ?? [];
+    if (!allowed.includes(toStatus)) {
+      throw new BadRequestException(`Transition interdite : ${fromStatus} → ${toStatus}`);
     }
 
-    // 🕒 Remplissage automatique des métadonnées
     const meta = STATUS_META[toStatus];
     if (meta) {
-      entity[meta.dateField] = new Date();
-      entity[meta.userField] = authUser?.id;
+      (entity as any)[meta.dateField] = new Date();
+      (entity as any)[meta.userField] = this.authUser?.id;
     }
     entity.status = toStatus;
 
-    const requesterWithRelations= await this.readOneById(entity.id);
-    const recipients = await this.userService.getMailRecipients();
-    console.log('AZAZAZAZSdsdsdssd',recipients)
+    // 1. on enregistre d'abord, 2. on notifie avec les données à jour
+    const saved = await this.repository.save(entity);
+    await this.notify(saved.id, toStatus);
+    return saved;
+  }
 
-    if (recipients.length === 0) return entity;
-    console.log('AZAZAZAZSDSDSSFRSSSSRE',"sds")
-    // 📧 ENVOI MAIL SELON LE STATUT
-    const mailConfig = MAIL_ACTION_CONFIG[toStatus];
-    console.log('AZAZAZAZSDSDSSFRSSSSRE',"sds")
+  /* ----------------------------------------------------------------------- */
+  /*                                 LOOKUPS                                 */
+  /* ----------------------------------------------------------------------- */
 
-    if (mailConfig) {
-      const payload = this.buildRequesterCreatedMailPayload(requesterWithRelations);
-      await this.sendRequesterCreatedEmail({
+  /** Opératrices actives (rôle isForOperator) — pour le formulaire et les filtres */
+  async searchOperators(q?: string, limit = 20) {
+    const term = String(q ?? '').trim();
+    const base: FindOptionsWhere<User> = { isActive: true, role: { isForOperator: true } };
+    const where: FindOptionsWhere<User>[] = term
+      ? [
+          { ...base, username: Like(`%${term}%`) },
+          { ...base, firstName: Like(`%${term}%`) },
+          { ...base, lastName: Like(`%${term}%`) },
+        ]
+      : [base];
+
+    const users = await this.userRepository.find({
+      where,
+      relations: { role: true },
+      order: { lastName: 'ASC', firstName: 'ASC' },
+      take: Math.min(Number(limit) || 20, 100),
+    });
+
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      displayName: [u.lastName, u.firstName].filter(Boolean).join(' ') || u.username,
+    }));
+  }
+
+  /** Agents labo (actifs par défaut) */
+  async searchLabAgents(q?: string, includeInactive = false, limit = 20) {
+    const term = String(q ?? '').trim();
+    const base: FindOptionsWhere<LabAgent> = includeInactive ? {} : { isActive: true };
+    const where: FindOptionsWhere<LabAgent>[] = term
+      ? [
+          { ...base, matricule: Like(`%${term}%`) },
+          { ...base, lastName: Like(`%${term}%`) },
+          { ...base, firstName: Like(`%${term}%`) },
+        ]
+      : [base];
+
+    return this.labAgentRepository.find({
+      where,
+      order: { lastName: 'ASC', firstName: 'ASC' },
+      take: Math.min(Number(limit) || 20, 100),
+    });
+  }
+
+  /* ----------------------------------------------------------------------- */
+  /*                                   MAIL                                  */
+  /* ----------------------------------------------------------------------- */
+
+  private async notify(id: string, status: RequesterStatusEnum) {
+    const mailConfig = MAIL_ACTION_CONFIG[status];
+    if (!mailConfig) return;
+    try {
+      const recipients = await this.userService.getMailRecipients();
+      if (!recipients.length) return;
+      const requester = await this.readOneById(id);
+      await this.sendMail({
         recipients,
         subject: mailConfig.subject,
         template: mailConfig.template,
-        payload,
+        payload: this.buildMailPayload(requester),
       });
+    } catch (error) {
+      // l'échec d'envoi d'un mail ne doit jamais bloquer la demande
+      this.logger?.error?.(`[RequesterService] mail error: ${error?.message ?? error}`);
     }
-    return await this.repository.save(entity);
   }
 
+  private formatDate(date?: Date | string | null): string {
+    return date ? new Date(date).toLocaleString('fr-FR') : '';
+  }
 
-
-private buildRequesterCreatedMailPayload(requester: Requester) {
+  private buildMailPayload(r: Requester) {
+    const operator = r.operator
+      ? [r.operator.lastName, r.operator.firstName].filter(Boolean).join(' ') || r.operator.username
+      : '';
     return {
-      requesterName: `${requester.createdBy?.userData?.username ?? ''}`,
-      reference: requester.reference,
-      ticket: requester.ticket,
-      title: requester.title,
-      status:requester.status,
-      description: requester.description,
-      priority: requester.priority,
-      requestType: requester.requesttype?.displayName,
-      station: requester.station?.displayName,
-      branch: requester.branch?.displayName,
-      closedBy: requester.closedBy?.username,
-      closedAt: new Date(requester.closedAt).toLocaleString('fr-FR'),
-      cancelledBy: requester.cancelledBy?.username,
-      cancelledAt: new Date(requester.cancelledAt).toLocaleString('fr-FR'),
-      treatedBy: requester.treatedBy?.username,
-      treatedAt: new Date(requester.treatedAt).toLocaleString('fr-FR'),
-      approvedBy:requester.approvedBy?.username,
-      approvedAt: new Date(requester.approvedAt).toLocaleString('fr-FR'),
-      createdBy: requester.createdBy?.username,
-      createdAt: new Date(requester.createdAt).toLocaleString('fr-FR'),
-      url: `${this.getBaseUrl()}/requester/preview/${requester.id}`,
+      requesterName: r.createdBy?.userData?.username ?? r.createdBy?.username ?? '',
+      reference: r.reference,
+      ticket: r.ticket,
+      status: r.status,
+      description: r.description,
+      correction: r.correction,
+      labAgent: r.labAgent ? `${r.labAgent.displayName} (${r.labAgent.matricule})` : '',
+      operator,
+      priority: r.priority,
+      requestType: r.requesttype?.displayName,
+      station: r.station?.displayName,
+      branch: r.branch?.displayName,
+      closedBy: r.closedBy?.username,
+      closedAt: this.formatDate(r.closedAt),
+      cancelledBy: r.cancelledBy?.username,
+      cancelledAt: this.formatDate(r.cancelledAt),
+      treatedBy: r.treatedBy?.username,
+      treatedAt: this.formatDate(r.treatedAt),
+      approvedBy: r.approvedBy?.username,
+      approvedAt: this.formatDate(r.approvedAt),
+      rejectedBy: r.rejectedBy?.username,
+      rejectedAt: this.formatDate(r.rejectedAt),
+      createdBy: r.createdBy?.username,
+      createdAt: this.formatDate(r.createdAt),
+      url: `${this.getBaseUrl()}/requester/preview/${r.id}`,
       year: new Date().getFullYear(),
     };
   }
 
-private async sendRequesterCreatedEmail(
-  options: MailOptions,
-): Promise<void> {
-  await this.mailerSenderService.sendEmails(
-    options.recipients,
-    options.subject,
-    options.template,
-    options.payload,
-  );
-}
+  private async sendMail(options: MailOptions): Promise<void> {
+    await this.mailerSenderService.sendEmails(
+      options.recipients,
+      options.subject,
+      options.template,
+      options.payload,
+    );
+  }
 
-
-
-private async readOneById(id:string): Promise<any> {
-    return  await this.repository.findOne({
-  where: { id: id },
-  relations: {
-    requesttype: true,
-    station: true,
-    branch: true,
-    createdBy:true,
-    approvedBy:true,
-    treatedBy:true,
-    closedBy:true,
-    cancelledBy:true
-  },
-});
-}
-
+  private async readOneById(id: string): Promise<Requester> {
+    return this.repository.findOne({ where: { id }, relations: DETAIL_RELATIONS });
+  }
 }

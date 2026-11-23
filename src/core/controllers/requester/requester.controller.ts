@@ -20,8 +20,13 @@ import {
   Patch,
   Post,
   Query,
+  Res,
+  NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
+import { RequesterPdfService } from 'src/core/services/requester/requester-pdf.service';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
   AbilityActionEnum,
   AbilitySubjectEnum,
@@ -36,7 +41,63 @@ import { RequesterService } from 'src/core/services/requester/requester.service'
 import { ApiAuthJwtHeader } from 'src/modules/auth/decorators/api-auth-jwt-header.decorator';
 import { ApiRequestIssuerHeader } from 'src/modules/auth/decorators/api-request-issuer-header.decorator';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
-import { FindManyOptions } from 'typeorm';
+import { FindManyOptions, FindOptionsWhere, Raw } from 'typeorm';
+
+/** Champs couverts par la recherche texte des demandes */
+const TEXT_FILTER_FIELDS = ['reference', 'ticket', 'description', 'correction'];
+/** Séparateur de la recherche multiple (ex : AY-00023|AY-00001) */
+const MULTI_SEPARATOR = '|';
+const MAX_TERMS = 30;
+
+/**
+ * Retire du paramètre `where` le terme de recherche texte s'il contient « | »
+ * et renvoie la liste des termes (nettoyés, dédoublonnés).
+ */
+function extractMultiTerms(query: any): { query: any; terms: string[] } {
+  if (!query?.where) return { query, terms: [] };
+  let where: any[];
+  try {
+    where = typeof query.where === 'string' ? JSON.parse(query.where) : query.where;
+  } catch {
+    return { query, terms: [] };
+  }
+  if (!Array.isArray(where)) return { query, terms: [] };
+
+  let terms: string[] = [];
+  const rest = where.filter((p) => {
+    const isText = p && !p.attribute && !p.type && typeof p.value === 'string';
+    if (isText && p.value.includes(MULTI_SEPARATOR)) {
+      terms = p.value
+        .split(MULTI_SEPARATOR)
+        .map((t: string) => t.trim())
+        .filter(Boolean);
+      return false;
+    }
+    return true;
+  });
+  terms = Array.from(new Set(terms)).slice(0, MAX_TERMS);
+  return { query: { ...query, where: JSON.stringify(rest) }, terms };
+}
+
+/** (champ1 LIKE t1 OR champ2 LIKE t1 …) OR (champ1 LIKE t2 …) — valeurs paramétrées */
+function multiTermCondition(terms: string[]): FindOptionsWhere<Requester> {
+  const params: Record<string, string> = {};
+  terms.forEach((t, i) => (params[`multiTerm${i}`] = `%${t}%`));
+  return {
+    reference: Raw((alias: string) => {
+      const prefix = alias.split('.')[0];
+      return (
+        '(' +
+        terms
+          .map((_, i) =>
+            TEXT_FILTER_FIELDS.map((f) => `${prefix}.${f} LIKE :multiTerm${i}`).join(' OR '),
+          )
+          .join(' OR ') +
+        ')'
+      );
+    }, params),
+  } as FindOptionsWhere<Requester>;
+}
 
 @ApiAuthJwtHeader()
 @ApiRequestIssuerHeader()
@@ -44,7 +105,10 @@ import { FindManyOptions } from 'typeorm';
 @ApiTags('requester')
 @Controller('requester')
 export class RequesterController {
-  constructor(private service: RequesterService) {}
+  constructor(
+    private service: RequesterService,
+    private pdfService: RequesterPdfService,
+  ) {}
 
   /**
    * Get paginated requester list
@@ -61,21 +125,132 @@ export class RequesterController {
       AbilityActionEnum.read,
       AbilitySubjectEnum.Requester,
     );
-    const options: FindManyOptions = buildFilterFromApiSearchParams(
+    // Recherche multiple : « AY-00023|AY-00001 » => demandes contenant l'un OU l'autre terme.
+    const { query: cleanQuery, terms } = extractMultiTerms(query);
+
+    const options: FindManyOptions<Requester> = buildFilterFromApiSearchParams(
       this.service.repository,
-      query as ApiSearchParamOptions,
+      cleanQuery as ApiSearchParamOptions,
       {
-        textFilterFields: ['reference', 'ticket', 'title', 'description'],
+        textFilterFields: TEXT_FILTER_FIELDS,
       },
     );
-    // ✅ RÈGLE MÉTIER : opérateur → seulement ses requesters
-    if (authUser?.role?.isForOperator) {
-      options.where = {
-        ...(options.where ?? {}),
-        createdBy: { userId: authUser.userId }, // ou requester.user.id selon ton modèle
-      };
+
+    if (terms.length) {
+      const condition = multiTermCondition(terms);
+      const current = options.where
+        ? Array.isArray(options.where)
+          ? options.where
+          : [options.where]
+        : [{}];
+      options.where = current.map((w) => ({
+        ...(w as object),
+        ...condition,
+      })) as FindOptionsWhere<Requester>[];
     }
+
+    // Tri par défaut : plus récentes d'abord
+    if (!options.order || Object.keys(options.order).length === 0) {
+      options.order = { createdAt: 'DESC' };
+    }
+
+    // ✅ RÈGLE MÉTIER : une opératrice voit les demandes qu'elle a créées
+    //    ET celles qui la concernent (créées par une collègue pour elle).
+    if (authUser?.role?.isForOperator) {
+      const scopes: FindOptionsWhere<Requester>[] = [
+        { createdBy: { userId: authUser.userId } },
+        { operatorId: authUser.userId },
+      ];
+      const current = options.where
+        ? Array.isArray(options.where)
+          ? options.where
+          : [options.where]
+        : [{}];
+      // (A OR B) AND (scope1 OR scope2) => produit cartésien
+      options.where = current.flatMap((w) =>
+        scopes.map((scope) => ({ ...(w as object), ...scope })),
+      ) as FindOptionsWhere<Requester>[];
+    }
+
     return this.service.readPaginatedListRecord(options);
+  }
+
+  /**
+   * Opératrices sélectionnables (rôle opérateur, actives)
+   */
+  @ApiQuery({ name: 'q', required: false })
+  @Get('lookups/operators')
+  async lookupOperators(@Query('q') q?: string, @Query('limit') limit?: number) {
+    return this.service.searchOperators(q, limit);
+  }
+
+  /**
+   * Agents labo sélectionnables (actifs par défaut)
+   */
+  @ApiQuery({ name: 'q', required: false })
+  @ApiQuery({ name: 'all', required: false })
+  @Get('lookups/lab-agents')
+  async lookupLabAgents(
+    @Query('q') q?: string,
+    @Query('all') all?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.searchLabAgents(q, all === 'true', limit);
+  }
+
+  /**
+   * PDF de la demande, généré côté serveur (impression / téléchargement).
+   * ?lang=fr|en  ?download=1 pour forcer le téléchargement
+   */
+  @ApiQuery({ name: 'lang', required: false })
+  @ApiQuery({ name: 'download', required: false })
+  @Get(':requesterId/pdf')
+  async pdf(
+    @CurrentUser() authUser: AuthUser,
+    @Param('requesterId', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+    @Query('lang') lang?: string,
+    @Query('download') download?: string,
+  ) {
+    const requester = await this.service.repository.findOne({
+      where: { id },
+      relations: {
+        requesttype: true,
+        station: true,
+        branch: true,
+        labAgent: true,
+        operator: true,
+        createdBy: true,
+        approvedBy: true,
+        rejectedBy: true,
+        treatedBy: true,
+        closedBy: true,
+        cancelledBy: true,
+      },
+    });
+    if (!requester) throw new NotFoundException('Demande non trouvée');
+
+    // Une opératrice n'imprime que ses demandes ou celles créées pour elle (ADR-0006)
+    if (
+      authUser?.role?.isForOperator &&
+      requester.createdBy?.userId !== authUser.userId &&
+      requester.operatorId !== authUser.userId
+    ) {
+      throw new ForbiddenException('Accès refusé');
+    }
+
+    const buffer = await this.pdfService.render(requester, {
+      lang,
+      printedBy: authUser?.username,
+    });
+    const filename = `DEMANDE-${requester.reference ?? id}.pdf`;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Length': String(buffer.length),
+      'Content-Disposition': `${download === '1' ? 'attachment' : 'inline'}; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+    });
+    res.end(buffer);
   }
 
   /**
@@ -131,7 +306,7 @@ export class RequesterController {
     @Body() dto: UpdateRequesterDto,
     @Query() query?: any,
   ): Promise<Requester> {
-    const requester = await this.service.updateRecord({ id: id ?? '' }, dto);
+    const requester = await this.service.updateRequester(id, dto);
     const options = buildFilterFromApiSearchParams(
       this.service.repository,
       query as ApiSearchOneParamOptions,

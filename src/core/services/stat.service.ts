@@ -54,13 +54,14 @@ interface DashboardStats {
 export class StatService {
   constructor(protected requesterService: RequesterService) {}
 
-  async getDashboardStats(dto: RequesterQueryDto): Promise<DashboardStats> {
+  async getDashboardStats(dto: RequesterQueryDto): Promise<DashboardStats & Record<string, any>> {
     const qb = this.requesterService.repository
       .createQueryBuilder('requester')
       .leftJoinAndSelect('requester.createdBy', 'createdBy')
       .leftJoinAndSelect('requester.station', 'station')
       .leftJoinAndSelect('requester.requesttype', 'requesttype')
-      .leftJoinAndSelect('requester.branch', 'branch');
+      .leftJoinAndSelect('requester.branch', 'branch')
+      .leftJoinAndSelect('requester.labAgent', 'labAgent');
 
     // --- Filtrage par période simple ---
     const now = new Date();
@@ -71,6 +72,14 @@ export class StatService {
       case DashboardQueryDtoEnum.lastYear:
         start = new Date(now.getFullYear() - 1, 0, 1);
         end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+        break;
+      case DashboardQueryDtoEnum.yearMinus2:
+        start = new Date(now.getFullYear() - 2, 0, 1);
+        end = new Date(now.getFullYear() - 2, 11, 31, 23, 59, 59);
+        break;
+      case DashboardQueryDtoEnum.yearMinus3:
+        start = new Date(now.getFullYear() - 3, 0, 1);
+        end = new Date(now.getFullYear() - 3, 11, 31, 23, 59, 59);
         break;
       case DashboardQueryDtoEnum.currentYear:
         start = new Date(now.getFullYear(), 0, 1);
@@ -89,16 +98,18 @@ export class StatService {
 
     qb.andWhere('requester.createdAt BETWEEN :start AND :end', { start, end });
     if (dto.userId) {
-      qb.where('createdBy.userId = :userId', {
-        userId: dto.userId,
-      });
+      // andWhere (et non where) pour ne pas écraser le filtre de période.
+      // Une opératrice voit ses demandes + celles créées pour elle.
+      qb.andWhere(
+        '(createdBy.userId = :userId OR requester.operator_id = :userId)',
+        { userId: dto.userId },
+      );
     }
     // --- Filtre branchId ---
     if (dto.branchId) {
       qb.andWhere('requester.branchId = :branchId', { branchId: dto.branchId });
     }
 
-    console.log('5555788787:', qb.getSql(), qb.getParameters());
     // --- Filtrage avancé via where (JSON) ---
     if (dto.where) {
       let filters: any[];
@@ -160,7 +171,6 @@ export class StatService {
     }
 
     const requests = await qb.getMany();
-    console.log('Total requests after DB filters:', requests.length);
     const emitterRequests = requests;
     // --- Stats par émetteur avec filtre date ---
 
@@ -268,6 +278,74 @@ export class StatService {
       closed: info.closed,
     }));
 
-    return { globalStats, emitterStats, centreStats };
+    // --- Priorités ---
+    const priorityStats = { Normal: 0, Important: 0, Urgent: 0 } as Record<string, number>;
+    requests.forEach((r) => {
+      const p = r.priority || 'Normal';
+      priorityStats[p] = (priorityStats[p] ?? 0) + 1;
+    });
+
+    // --- Types de demande (top 6) ---
+    const typeMap: Record<string, number> = {};
+    requests.forEach((r) => {
+      const type = r.requesttype?.displayName ?? 'Other';
+      typeMap[type] = (typeMap[type] ?? 0) + 1;
+    });
+    const typeStats = Object.entries(typeMap)
+      .map(([type, total]) => ({ type, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+
+    // --- Erreurs par agent labo (top 6) ---
+    const agentMap: Record<string, { agent: string; matricule: string; total: number; open: number }> = {};
+    requests.forEach((r) => {
+      if (!r.labAgent) return;
+      const key = r.labAgent.id;
+      if (!agentMap[key])
+        agentMap[key] = {
+          agent: [r.labAgent.lastName, r.labAgent.firstName].filter(Boolean).join(' '),
+          matricule: r.labAgent.matricule,
+          total: 0,
+          open: 0,
+        };
+      agentMap[key].total++;
+      if (r.status === RequesterStatusEnum.Open || r.status === RequesterStatusEnum.Approved)
+        agentMap[key].open++;
+    });
+    const labAgentStats = Object.values(agentMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+
+    // --- Évolution : par jour (<= 92 jours) sinon par mois ---
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    const spanDays = Math.ceil((end.getTime() - start.getTime()) / 86400000);
+    const granularity: 'day' | 'month' = spanDays <= 92 ? 'day' : 'month';
+    const buckets: Record<string, number> = {};
+    const cursor = new Date(start.getFullYear(), start.getMonth(), granularity === 'day' ? start.getDate() : 1);
+    while (cursor <= end) {
+      buckets[granularity === 'day' ? dayKey(cursor) : monthKey(cursor)] = 0;
+      if (granularity === 'day') cursor.setDate(cursor.getDate() + 1);
+      else cursor.setMonth(cursor.getMonth() + 1);
+    }
+    requests.forEach((r) => {
+      const d = new Date(r.createdAt);
+      const k = granularity === 'day' ? dayKey(d) : monthKey(d);
+      if (k in buckets) buckets[k]++;
+    });
+    const trend = Object.entries(buckets).map(([date, total]) => ({ date, total }));
+
+    return {
+      globalStats,
+      emitterStats,
+      centreStats,
+      priorityStats,
+      typeStats,
+      labAgentStats,
+      trend,
+      granularity,
+      period: { start, end },
+    };
   }
 }

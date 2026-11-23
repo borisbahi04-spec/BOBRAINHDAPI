@@ -40,6 +40,10 @@ import { RequesterStatusHistory } from './entities/requester/requester-status-hi
 import { Requester } from './entities/requester/requester.entity';
 import { StatController } from './controllers/stat.controller';
 import { StatService } from './services/stat.service';
+import { LabAgent } from './entities/requester/lab-agent.entity';
+import { LabAgentController } from './controllers/requester/lab-agent.controller';
+import { LabAgentService } from './services/requester/lab-agent.service';
+import { RequesterPdfService } from './services/requester/requester-pdf.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -56,6 +60,7 @@ import { StatService } from './services/stat.service';
       Requester,
       Department,
       RequesterStatusHistory,
+      LabAgent,
     ]),
   ],
   controllers: [
@@ -68,6 +73,7 @@ import { StatService } from './services/stat.service';
     RequesterController,
     DepartmentController,
     StatController,
+    LabAgentController,
   ],
   providers: [
     RunInTransactionService,
@@ -85,6 +91,8 @@ import { StatService } from './services/stat.service';
     RequesterService,
     RequesterSubscriber,
     StatService,
+    LabAgentService,
+    RequesterPdfService,
   ],
   exports: [
     TypeOrmModule,

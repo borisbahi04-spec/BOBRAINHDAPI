@@ -26,7 +26,7 @@
             <tr>
               <td style="padding:25px; color:#333333; font-size:14px;">
                 <p style="margin-top:0;">
-                  Bonjour <strong>{{title}}</strong>,
+                  Bonjour,
                 </p>
 
                 <p>
