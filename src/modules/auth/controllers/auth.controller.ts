@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Req,
@@ -28,6 +29,7 @@ import { LoginDto } from '../dto/login.dto';
 import { CustomApiErrorResponse, Logger4jsService } from '@app/nestjs';
 import { AuthUserSessionData } from 'src/core/classes/auth-user-session.data';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { ApiRequestIssuerHeader } from '../decorators/api-request-issuer-header.decorator';
 
 @ApiRequestIssuerHeader()
@@ -101,6 +103,16 @@ export class AuthController {
   async changePassword(@Req() request: any, @Body() dto: ChangePasswordDto) {
     await this.authService.changePassword(dto);
     return;
+  }
+
+  /**
+   * Update session user's own profile
+   */
+  @ApiAuthJwtHeader()
+  @HttpCode(HttpStatus.OK)
+  @Patch('profile')
+  async updateProfile(@Body() dto: UpdateProfileDto) {
+    return await this.authService.updateProfile(dto);
   }
 
   /**

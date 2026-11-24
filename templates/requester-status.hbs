@@ -1,121 +1,167 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <body style="margin:0; padding:0; background:#f4f6f8; font-family: Arial, Helvetica, sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td align="center" style="padding:30px 15px;">
-          <table width="600" style="background:#ffffff; border-radius:6px; overflow:hidden;">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{reference}}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F3F4F6; font-family:Arial, Helvetica, sans-serif; color:#1F2937;">
+  <!-- Aperçu (texte affiché dans la liste des e-mails) -->
+  <div style="display:none; max-height:0; overflow:hidden;">Demande {{reference}} {{statusLabel}}</div>
 
-            <!-- Header -->
-            <tr>
-              <td style="background:; padding:20px; color:#ffffff;">
-                <h2 style="margin:0;">
-                  Précédent {{status}} {{reference}}
-                </h2>
-              </td>
-            </tr>
-          
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F3F4F6">
+    <tr>
+      <td align="center" style="padding:28px 12px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background-color:#FFFFFF; border-radius:10px; overflow:hidden; border:1px solid #E5E7EB;">
 
-            <!-- Content -->
-            <tr>
-              <td style="padding:25px; color:#333;">
-                <p>
-                 
-                </p>
+          <!-- En-tête -->
+          <tr>
+            <td bgcolor="#174E26" style="padding:22px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="color:#FFFFFF; font-size:18px; font-weight:bold; letter-spacing:.5px;">
+                    BOBRAIN <span style="color:#F0A020;">HELPDESK</span>
+                  </td>
+                  <td align="right" style="color:#D5E7D9; font-size:12px;">
+                    Dekel Agri-Vision
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr><td height="4" bgcolor="#8DBE48" style="font-size:0; line-height:0;">&nbsp;</td></tr>
 
-                <table width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse;">
-                  <tr>
-                    <td><strong>Référence</strong></td>
-                    <td>{{reference}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Ticket</strong></td>
-                    <td>{{ticket}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Type</strong></td>
-                    <td>{{requestType}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Priorité</strong></td>
-                    <td>{{priority}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Station</strong></td>
-                    <td>{{station}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Société</strong></td>
-                    <td>{{branch}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Date</strong></td>
-                    <td></td>
-                  </tr>
-                </table>
+          <!-- Titre + statut -->
+          <tr>
+            <td style="padding:26px 28px 6px 28px;">
+              <span style="display:inline-block; padding:4px 12px; border-radius:999px; background-color:{{statusBg}}; color:{{statusColor}}; font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:.5px;">
+                {{statusLabel}}
+              </span>
+              {{#if isUrgent}}
+              <span style="display:inline-block; margin-left:6px; padding:4px 12px; border-radius:999px; background-color:#FEF2F2; color:#B91C1C; font-size:12px; font-weight:bold; text-transform:uppercase;">
+                Urgent
+              </span>
+              {{/if}}
+              <h1 style="margin:14px 0 4px 0; font-size:22px; line-height:1.3; color:#123F1F;">Demande {{statusLabel}}</h1>
+              <p style="margin:0; font-size:14px; color:#6B7280;">Référence <strong style="color:#174E26;">{{reference}}</strong></p>
+            </td>
+          </tr>
 
-                <table width="100%" cellpadding="6" cellspacing="0" style="margin-top:15px; border-collapse:collapse; font-size:14px;">
-                  <tr>
-                    <td style="width:40%;"><strong>Agent labo concerné</strong></td>
-                    <td>{{labAgent}}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Opératrice</strong></td>
-                    <td>{{operator}}</td>
-                  </tr>
-                </table>
+          <tr>
+            <td style="padding:16px 28px 0 28px; font-size:14px; line-height:1.6;">
+              <p style="margin:0;">Bonjour,</p>
+              <p style="margin:8px 0 0 0;">{{statusIntro}}</p>
+            </td>
+          </tr>
 
-                <p style="margin-top:15px;">
-                  <strong>Description du problème :</strong><br />
-                  {{description}}
-                </p>
+          <!-- Action -->
+          {{#if actionBy}}
+          <tr>
+            <td style="padding:16px 28px 0 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:10px 14px; background-color:{{statusBg}}; border-left:4px solid {{statusColor}}; border-radius:4px; font-size:14px; color:{{statusColor}};">
+                    <strong>{{actionLabel}}</strong> {{actionBy}}{{#if actionAt}} le {{actionAt}}{{/if}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {{/if}}
 
-                <p>
-                  <strong>Correction à réaliser :</strong><br />
-                  {{correction}}
-                </p>
+          <!-- Détails -->
+          <tr>
+            <td style="padding:20px 28px 0 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB; border-radius:8px; font-size:14px;">
+                <tr>
+                  <td width="42%" style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Ticket(s)</td>
+                  <td style="padding:10px 14px; font-weight:bold; font-family:Consolas, monospace; border-bottom:1px solid #F3F4F6;">{{ticket}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Type de requête</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">{{requestType}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Priorité</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">
+                    <span style="display:inline-block; padding:2px 10px; border-radius:999px; background-color:{{priorityBg}}; color:{{priorityColor}}; font-size:12px; font-weight:bold;">{{priorityLabel}}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Station</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">{{station}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Société</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">{{branch}}</td>
+                </tr>
+                {{#if labAgent}}
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Agent labo concerné</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">{{labAgent}}</td>
+                </tr>
+                {{/if}}
+                {{#if operator}}
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280; border-bottom:1px solid #F3F4F6;">Opératrice concernée</td>
+                  <td style="padding:10px 14px; border-bottom:1px solid #F3F4F6;">{{operator}}</td>
+                </tr>
+                {{/if}}
+                <tr>
+                  <td style="padding:10px 14px; color:#6B7280;">Demandeur</td>
+                  <td style="padding:10px 14px;">{{requesterName}} <span style="color:#9CA3AF;">· {{createdAt}}</span></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-                <!-- CTA -->
-                <p style="text-align:center; margin:30px 0;">
-                  <a
-                    href="{{url}}"
-                    target="_blank"
-                    style="
-                      color:#ffffff;
-                      padding:12px 24px;
-                      text-decoration:none;
-                      border-radius:4px;
-                      font-weight:bold;
-                      display:inline-block;
-                    "
-                  >
-                    Consulter la demande
-                  </a>
-                </p>
+          <!-- Problème / correction -->
+          <tr>
+            <td style="padding:18px 28px 0 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:12px 14px; background-color:#F9FAFB; border-left:4px solid #F0A020; border-radius:4px; font-size:14px; line-height:1.55;">
+                    <div style="font-size:12px; font-weight:bold; text-transform:uppercase; color:#A86A0B; margin-bottom:4px;">Description du problème</div>
+                    <div style="white-space:pre-line;">{{description}}</div>
+                  </td>
+                </tr>
+                <tr><td height="10" style="font-size:0; line-height:0;">&nbsp;</td></tr>
+                <tr>
+                  <td style="padding:12px 14px; background-color:#F9FAFB; border-left:4px solid #8DBE48; border-radius:4px; font-size:14px; line-height:1.55;">
+                    <div style="font-size:12px; font-weight:bold; text-transform:uppercase; color:#5C7F2A; margin-bottom:4px;">Correction à réaliser</div>
+                    <div style="white-space:pre-line;">{{correction}}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-                <p style="font-size:12px; color:#777;">
-                  Si le bouton ne fonctionne pas, copiez ce lien :
-                  <br />
-                  <a href="{{url}}">{{url}}</a>
-                </p>
+          <!-- Bouton -->
+          <tr>
+            <td align="center" style="padding:28px 28px 8px 28px;">
+              <a href="{{url}}" target="_blank" style="display:inline-block; background-color:#174E26; color:#FFFFFF; padding:13px 28px; border-radius:6px; font-size:14px; font-weight:bold; text-decoration:none;">
+                Consulter la demande
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 28px 26px 28px; font-size:12px; color:#9CA3AF;">
+              Si le bouton ne fonctionne pas, copiez ce lien :<br />
+              <a href="{{url}}" style="color:#236A36; word-break:break-all;">{{url}}</a>
+            </td>
+          </tr>
 
-                <p>
-                  Cordialement,<br />
-                  <strong>Bobrain Helpdesk</strong>
-                </p>
-              </td>
-            </tr>
+          <!-- Pied de page -->
+          <tr>
+            <td bgcolor="#F9FAFB" style="padding:16px 28px; border-top:1px solid #E5E7EB; font-size:12px; color:#6B7280; text-align:center; line-height:1.5;">
+              Message automatique envoyé par BOBRAIN Helpdesk — merci de ne pas y répondre.<br />
+              © {{year}} Dekel Agri-Vision
+            </td>
+          </tr>
 
-            <!-- Footer -->
-            <tr>
-              <td style="background:#f1f1f1; padding:15px; text-align:center; font-size:12px; color:#777;">
-                © {{year}} Bobrain Helpdesk
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>

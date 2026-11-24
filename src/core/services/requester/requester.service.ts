@@ -120,6 +120,11 @@ export class RequesterService extends AbstractService<Requester> {
   }
 
   private async assertOperator(operatorId: string) {
+    // Une opératrice ne peut désigner qu'elle-même
+    const authUser = this.authUser;
+    if (authUser?.role?.isForOperator && operatorId !== authUser.userId) {
+      throw new BadRequestException(`Vous ne pouvez désigner que vous-même comme opératrice`);
+    }
     const operator = await this.userRepository.findOne({
       where: { id: operatorId },
       relations: { role: true },
@@ -185,7 +190,8 @@ export class RequesterService extends AbstractService<Requester> {
     }
 
     if (dto.labAgentId) await this.assertLabAgent(dto.labAgentId, entity.labAgentId);
-    if (dto.operatorId) await this.assertOperator(dto.operatorId);
+    // opératrice inchangée : pas de contrôle (demande existante)
+    if (dto.operatorId && dto.operatorId !== entity.operatorId) await this.assertOperator(dto.operatorId);
 
     const data: Partial<Requester> = {
       ...(dto.ticket !== undefined && { ticket: RequesterService.normalizeTicket(dto.ticket) }),
@@ -241,6 +247,8 @@ export class RequesterService extends AbstractService<Requester> {
   async searchOperators(q?: string, limit = 20) {
     const term = String(q ?? '').trim();
     const base: FindOptionsWhere<User> = { isActive: true, role: { isForOperator: true } };
+    // Une opératrice ne voit qu'elle-même dans la liste
+    if (this.authUser?.role?.isForOperator) base.id = this.authUser.userId;
     const where: FindOptionsWhere<User>[] = term
       ? [
           { ...base, username: Like(`%${term}%`) },
@@ -297,7 +305,7 @@ export class RequesterService extends AbstractService<Requester> {
       const requester = await this.readOneById(id);
       await this.sendMail({
         recipients,
-        subject: mailConfig.subject,
+        subject: requester?.reference ? `${mailConfig.subject} - ${requester.reference}` : mailConfig.subject,
         template: mailConfig.template,
         payload: this.buildMailPayload(requester),
       });
@@ -311,7 +319,34 @@ export class RequesterService extends AbstractService<Requester> {
     return date ? new Date(date).toLocaleString('fr-FR') : '';
   }
 
+  /** Libellés / couleurs utilisés par les templates e-mail */
+  private static readonly MAIL_STATUS_UI: Record<string, { label: string; color: string; bg: string; intro: string; action: string }> = {
+    Open: { label: 'nouvelle', color: '#174E26', bg: '#EEF5EF', intro: "Une nouvelle demande d'intervention a été enregistrée.", action: 'Créée par' },
+    Approved: { label: 'approuvée', color: '#236A36', bg: '#EEF5EF', intro: 'La demande ci-dessous a été approuvée et peut être traitée.', action: 'Approuvée par' },
+    Treated: { label: 'traitée', color: '#5C7F2A', bg: '#F3F9EA', intro: 'La correction demandée a été réalisée.', action: 'Traitée par' },
+    Closed: { label: 'clôturée', color: '#374151', bg: '#F3F4F6', intro: 'La demande ci-dessous est désormais clôturée.', action: 'Clôturée par' },
+    Rejected: { label: 'rejetée', color: '#B91C1C', bg: '#FEF2F2', intro: "La demande ci-dessous a été rejetée.", action: 'Rejetée par' },
+    Cancelled: { label: 'annulée', color: '#A86A0B', bg: '#FEF6E7', intro: 'La demande ci-dessous a été annulée.', action: 'Annulée par' },
+  };
+
+  private static readonly MAIL_PRIORITY_UI: Record<string, { label: string; color: string; bg: string }> = {
+    Normal: { label: 'Normale', color: '#4B5563', bg: '#F3F4F6' },
+    Important: { label: 'Importante', color: '#A86A0B', bg: '#FEF6E7' },
+    Urgent: { label: 'Urgente', color: '#B91C1C', bg: '#FEF2F2' },
+  };
+
   private buildMailPayload(r: Requester) {
+    const st = RequesterService.MAIL_STATUS_UI[r.status] ?? RequesterService.MAIL_STATUS_UI.Open;
+    const pr = RequesterService.MAIL_PRIORITY_UI[r.priority] ?? RequesterService.MAIL_PRIORITY_UI.Normal;
+    const actionMap: Record<string, [any, any]> = {
+      Open: [r.createdBy, r.createdAt],
+      Approved: [r.approvedBy, r.approvedAt],
+      Treated: [r.treatedBy, r.treatedAt],
+      Closed: [r.closedBy, r.closedAt],
+      Rejected: [r.rejectedBy, r.rejectedAt],
+      Cancelled: [r.cancelledBy, r.cancelledAt],
+    };
+    const [actor, actionDate] = actionMap[r.status] ?? actionMap.Open;
     const operator = r.operator
       ? [r.operator.lastName, r.operator.firstName].filter(Boolean).join(' ') || r.operator.username
       : '';
@@ -342,6 +377,17 @@ export class RequesterService extends AbstractService<Requester> {
       createdAt: this.formatDate(r.createdAt),
       url: `${this.getBaseUrl()}/requester/preview/${r.id}`,
       year: new Date().getFullYear(),
+      statusLabel: st.label,
+      statusColor: st.color,
+      statusBg: st.bg,
+      statusIntro: st.intro,
+      actionLabel: st.action,
+      actionBy: actor?.userData?.username ?? actor?.username ?? '',
+      actionAt: this.formatDate(actionDate),
+      priorityLabel: pr.label,
+      priorityColor: pr.color,
+      priorityBg: pr.bg,
+      isUrgent: r.priority === 'Urgent',
     };
   }
 

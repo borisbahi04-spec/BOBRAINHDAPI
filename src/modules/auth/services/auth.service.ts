@@ -20,6 +20,7 @@ import {
   REQUEST_APP_KEY,
 } from '../definitions/constants';
 import { ChangePasswordDto } from '../dto/change-password.dto';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { Application } from 'src/core/entities/session/application.entity';
 
 @Injectable()
@@ -167,6 +168,34 @@ export class AuthService {
     );
 
     return await this.logout();
+  }
+
+  /** Mise à jour du profil de l'utilisateur connecté (nom, prénoms, e-mail, téléphone) */
+  async updateProfile(dto: UpdateProfileDto) {
+    const authUser = this.request[REQUEST_AUTH_USER_KEY] as AuthUser;
+    if (!authUser?.userId) {
+      throw new UnauthorizedException(`Session introuvable`);
+    }
+    const clean = (v?: string) => (v === undefined ? undefined : String(v).trim() || null);
+    const data: Record<string, any> = {
+      lastName: clean(dto.lastName),
+      firstName: clean(dto.firstName),
+      email: clean(dto.email),
+      phoneNumber: clean(dto.phoneNumber),
+    };
+    Object.keys(data).forEach((k) => data[k] === undefined && delete data[k]);
+    if (Object.keys(data).length) {
+      await this.userService.repository.update({ id: authUser.userId }, data);
+    }
+    const user = await this.userService.repository.findOneBy({ id: authUser.userId });
+    return {
+      id: user?.id,
+      username: user?.username,
+      lastName: user?.lastName,
+      firstName: user?.firstName,
+      email: user?.email,
+      phoneNumber: user?.phoneNumber,
+    };
   }
 
   async switchToBranch(branchId: string) {
