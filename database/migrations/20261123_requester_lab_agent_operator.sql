@@ -6,9 +6,9 @@
 --  - requester : + correction, + lab_agent_id, + operator_id
 --  - requester.title est CONSERVÉ (historique) mais n'est plus saisi
 --
---  En DEV, TypeORM (synchronize=true quand NODE_ENV != production)
---  crée ces éléments automatiquement au démarrage de l'API.
---  En PRODUCTION, exécuter ce script UNE FOIS après une sauvegarde :
+--  ⚠ Depuis l'ADR-0018, ces changements sont appliqués AUTOMATIQUEMENT au démarrage
+--  de l'API par la migration TypeORM src/database/migrations/1795478400000-*.ts
+--  (APP_DB_MIGRATIONS_RUN=true). Ce script reste une alternative manuelle :
 --     mysqldump -u root -p bobrain_db > backup_bobrain_db.sql
 --     mysql     -u root -p bobrain_db < 20261123_requester_lab_agent_operator.sql
 -- =====================================================================
