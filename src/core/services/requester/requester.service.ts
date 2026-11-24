@@ -120,11 +120,6 @@ export class RequesterService extends AbstractService<Requester> {
   }
 
   private async assertOperator(operatorId: string) {
-    // Une opératrice ne peut désigner qu'elle-même
-    const authUser = this.authUser;
-    if (authUser?.role?.isForOperator && operatorId !== authUser.userId) {
-      throw new BadRequestException(`Vous ne pouvez désigner que vous-même comme opératrice`);
-    }
     const operator = await this.userRepository.findOne({
       where: { id: operatorId },
       relations: { role: true },
@@ -247,8 +242,6 @@ export class RequesterService extends AbstractService<Requester> {
   async searchOperators(q?: string, limit = 20) {
     const term = String(q ?? '').trim();
     const base: FindOptionsWhere<User> = { isActive: true, role: { isForOperator: true } };
-    // Une opératrice ne voit qu'elle-même dans la liste
-    if (this.authUser?.role?.isForOperator) base.id = this.authUser.userId;
     const where: FindOptionsWhere<User>[] = term
       ? [
           { ...base, username: Like(`%${term}%`) },
