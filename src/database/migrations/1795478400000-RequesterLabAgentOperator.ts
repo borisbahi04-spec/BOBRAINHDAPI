@@ -63,7 +63,23 @@ export class RequesterLabAgentOperator1795478400000 implements MigrationInterfac
     await this.ensureIndex(qr, 'requester', new TableIndex({ name: 'IDX_requester_lab_agent_id', columnNames: ['lab_agent_id'] }));
     await this.ensureIndex(qr, 'requester', new TableIndex({ name: 'IDX_requester_operator_id', columnNames: ['operator_id'] }));
 
-    // 4. Clés étrangères (SET NULL : supprimer un agent / un utilisateur ne supprime pas la demande)
+    // 4. Alignement jeu de caractères / collation.
+    //    MySQL refuse une clé étrangère entre deux colonnes VARCHAR de charset/collation différents
+    //    (« Referencing column … and referenced column … are incompatible »). Les tables existantes
+    //    peuvent avoir été créées avec un charset différent du défaut actuel de la base : on aligne
+    //    donc lab_agent sur requester, puis chaque colonne référençante sur la colonne référencée.
+    const appCharset = await this.columnCharset(qr, 'requester', 'id');
+    if (appCharset) {
+      const agentId = await this.columnCharset(qr, 'lab_agent', 'id');
+      if (agentId && (agentId.cs !== appCharset.cs || agentId.co !== appCharset.co)) {
+        await this.dropForeignKeysOn(qr, 'requester', 'lab_agent_id');
+        await qr.query(`ALTER TABLE \`lab_agent\` CONVERT TO CHARACTER SET ${appCharset.cs} COLLATE ${appCharset.co}`);
+      }
+    }
+    await this.alignColumn(qr, 'requester', 'lab_agent_id', 'lab_agent', 'id');
+    await this.alignColumn(qr, 'requester', 'operator_id', 'user', 'id');
+
+    // 5. Clés étrangères (SET NULL : supprimer un agent / un utilisateur ne supprime pas la demande)
     await this.ensureForeignKey(
       qr,
       'requester',
@@ -105,6 +121,37 @@ export class RequesterLabAgentOperator1795478400000 implements MigrationInterfac
   }
 
   /* ------------------------------ utilitaires ------------------------------ */
+
+  /** Charset / collation d'une colonne (null si colonne absente ou non textuelle) */
+  private async columnCharset(qr: QueryRunner, table: string, column: string): Promise<{ cs: string; co: string } | null> {
+    const rows = await qr.query(
+      `SELECT CHARACTER_SET_NAME AS cs, COLLATION_NAME AS co FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [table, column],
+    );
+    const r = rows?.[0];
+    const safe = (v: unknown) => typeof v === 'string' && /^[A-Za-z0-9_]+$/.test(v);
+    return r && safe(r.cs) && safe(r.co) ? { cs: r.cs, co: r.co } : null;
+  }
+
+  /** Aligne une colonne VARCHAR(36) nullable sur le charset/collation de la colonne référencée */
+  private async alignColumn(qr: QueryRunner, table: string, column: string, refTable: string, refColumn: string) {
+    const ref = await this.columnCharset(qr, refTable, refColumn);
+    const cur = await this.columnCharset(qr, table, column);
+    if (!ref || !cur || (ref.cs === cur.cs && ref.co === cur.co)) return;
+    await this.dropForeignKeysOn(qr, table, column);
+    await qr.query(
+      `ALTER TABLE \`${table}\` MODIFY \`${column}\` varchar(36) CHARACTER SET ${ref.cs} COLLATE ${ref.co} NULL`,
+    );
+  }
+
+  /** Supprime les éventuelles clés étrangères posées sur une colonne (pour pouvoir la modifier) */
+  private async dropForeignKeysOn(qr: QueryRunner, table: string, column: string) {
+    const t = await qr.getTable(table);
+    for (const fk of [...(t?.foreignKeys ?? [])]) {
+      if (fk.columnNames.includes(column)) await qr.dropForeignKey(table, fk);
+    }
+  }
 
   private async ensureColumn(qr: QueryRunner, table: string, column: TableColumn) {
     if (!(await qr.hasColumn(table, column.name))) await qr.addColumn(table, column);
